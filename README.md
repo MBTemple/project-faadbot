@@ -32,10 +32,10 @@
     
 ## Vision
 
-*FOR* discord users *WHO* require mundane actions that require moderator approval, the FAADBot 
-is a discord bot *THAT* automates these mundane tasks. *UNLIKE* most other discord bots, 
-*OUR PRODUCT* will be developed modularly to allow for easy addition of new features in an
-open source environment.
+*FOR* discord users *WHO* have user requests that require moderator approval, the FAADBot 
+is a discord bot *THAT* automates handling of these mundane tasks to reduce workload on moderators
+*UNLIKE* most other discord bots, *OUR PRODUCT* will be created modularly to promote open-source additon 
+of additional functionalities.
 
 ## Personas
 
