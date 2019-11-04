@@ -41,6 +41,11 @@ of additional functionalities.
 
 ## Planned Features
 
+- Adding and removing roles (normal user)
+- Change nicknames (normal user)
+- Text to speech (normal user)
+- Ban users (moderator/super user)
+- Create or Delete roles (moderator/super user)
 
 ## Resources
 
@@ -54,9 +59,6 @@ of additional functionalities.
 ## Group Members
 
 - Christopher Park
-
 - Sungji Kim
-
 - Maamar Bousseloub
-
 - Dawud Baig
