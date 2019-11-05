@@ -1,5 +1,24 @@
 # project-faadbot
 
+## Operation and Requirements
+
+The use of this discord bot requires the host to have python 3 and discord.py installed.
+
+#### Linux
+
+First start with installation of Python 3.
+`$sudo apt-get install python3.6`
+After the installation is complete, install discord.py
+`$pip install discord.py`
+
+Once these dependancies are installed, the python files can be executed to connect the bot to the linked
+test server. This model of the bot is dependant on a text file that contains the OAuth2 token for discord.
+Create a new application on discord to generate a OAuth2 token for use. 
+
+The helloWorld.py file contains a minimally viable product that connects the bot to the server and
+responds to all inputs starting with the character`!` with "Hello World". The main.py file contains
+the base module for the final product. 
+
 ## Project Abstract
 
     Discord is a popular application that works in a similar manner to slack. Discord provides users the
