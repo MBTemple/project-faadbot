@@ -38,8 +38,16 @@ is a discord bot *THAT* automates handling of these mundane tasks to reduce work
 of additional functionalities.
 
 ## Personas
+#### Alex - Streamer
 
-## Planned Features
+Alex, age 23, is a college student at XYZ university in Vermont. He is in his third year for an accounting degree.
+When Alex isn't busy with his academics, he spends a significant amount of his time playing video games. TAlex
+frequently uses discord to coordinate and communicate with his friends while playing games with them. Recently, 
+with the increasing popularity of video game streaming in the past year, Alex wanted to attempt it himself. 
+Since a majority of the starting difficulty of a streamer stems from advertising your channel, Alex takes to
+discord as a means of putting out awareness of his streams. 
+
+## Initially Planned Features
 
 - Adding and removing roles (normal user)
 - Change nicknames (normal user)
