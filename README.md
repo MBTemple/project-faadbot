@@ -68,11 +68,35 @@ discord as a means of putting out awareness of his streams.
 
 #### Jimmy - New Member
 
-Jimmy, age 20, is a criminal justice major at a university in New York. Jimmy likes to spend his free time reading or watching documentaries. Jimmy has joined a club for other law majors to network, socialize and share resources. Jimmy wants to form new connections and make friends with other undergraduates in his field. This club’s members use Discord to communicate. Jimmy isn’t tech-illiterate but is not necessarily tech-savvy either. The only messaging app he’s familiar with is Facebook Messenger, so Discord is a new experience for him. Jimmy downloads the app and joins the server linked on the club’s webpage. He is initially overwhelmed by the options and settings available. Jimmy doesn’t want to join any large group discussions and is more so seeking to get to know some people individually.
+Jimmy, age 20, is a criminal justice major at a university in New York. Jimmy likes to spend his free time
+reading or watching documentaries. Jimmy has joined a club for other law majors to network, socialize and
+share resources. Jimmy wants to form new connections and make friends with other undergraduates in his field. 
+This club’s members use Discord to communicate. Jimmy isn’t tech-illiterate but is not necessarily tech-savvy 
+either. The only messaging app he’s familiar with is Facebook Messenger, so Discord is a new experience for him. 
+Jimmy downloads the app and joins the server linked on the club’s webpage. He is initially overwhelmed by the 
+options and settings available. Jimmy doesn’t want to join any large group discussions and is more so seeking to 
+get to know some people individually.
 
 #### Summer - Moderator
 
-Summer, age 32, is an owner of a baby product company and she herself is having one, 12 months old, daughter. In order to get information about customer needs for baby products, she runs a parenting club. There are 1 million members in the club, consist of 67.5% women and 32.5% men, and 88% of members are from 25-39 age groups. She uses Discord to communicate with announce to club members. Summer never used Discord before, and she is not a tech-friendly person. She was overwhelmed by a huge number of functions Discord have. Also, because she's running a company, she doesn't want to spend much time managing the Discord server but she still wants to make the Discord server page clean. Since the size of the club is big, there are some people who helps her running the club so she wants to assign some roles to people on Discord server. To keep the server page clean, she wants to filter new users and exorcise users who spoil the atmosphere. 
+Summer, age 32, is an owner of a baby product company and she herself is having one, 12 months old, daughter. 
+In order to get information about customer needs for baby products, she runs a parenting club. There are 1 million 
+members in the club, consist of 67.5% women and 32.5% men, and 88% of members are from 25-39 age groups. She uses 
+Discord to communicate with announce to club members. Summer never used Discord before, and she is not a tech-friendly 
+person. She was overwhelmed by a huge number of functions Discord have. Also, because she's running a company, she 
+doesn't want to spend much time managing the Discord server but she still wants to make the Discord server page clean. 
+Since the size of the club is big, there are some people who helps her running the club so she wants to assign some 
+roles to people on Discord server. To keep the server page clean, she wants to filter new users and exorcise users who 
+spoil the atmosphere. 
+
+#### Phil - Existing Member
+
+Phil, age 23, is a making a new soccer club at his University. His Club has attracted a lot of people lately to join the 
+club as there isn't an existing soccer club at the university. With the increasing amount of members joining in and a lot 
+of new members who are new to the sport, Phil wants to create a channel where he can communicate with the members in a 
+much managable manner and share tutorials which can help them learn new skills. Phil is already aware of discord and all 
+the functioanlities it can bring in creating a much mangable channel. Phil decides to use Discord as a mean of communication 
+and teaching new skills through video tutorials to all the members. 
 
 ## Initially Planned Features
 
