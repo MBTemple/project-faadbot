@@ -19,6 +19,12 @@ The helloWorld.py file contains a minimally viable product that connects the bot
 responds to all inputs starting with the character`!` with "Hello World". The main.py file contains
 the base module for the final product. 
 
+*NOTE:*
+
+In some circumstances, python 2 may be installed as part of the operating system. If this is the case, 
+you will need to install pip 3 and use that to ensure that an old version of discord.py is not installed
+`$pip3 install discord.py==1.0.1`
+
 ## Project Abstract
 
     Discord is a popular application that works in a similar manner to slack. Discord provides users the
