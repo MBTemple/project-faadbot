@@ -41,7 +41,7 @@ of additional functionalities.
 #### Alex - Streamer
 
 Alex, age 23, is a college student at XYZ university in Vermont. He is in his third year for an accounting degree.
-When Alex isn't busy with his academics, he spends a significant amount of his time playing video games. TAlex
+When Alex isn't busy with his academics, he spends a significant amount of his time playing video games. Alex
 frequently uses discord to coordinate and communicate with his friends while playing games with them. Recently, 
 with the increasing popularity of video game streaming in the past year, Alex wanted to attempt it himself. 
 Since a majority of the starting difficulty of a streamer stems from advertising your channel, Alex takes to
@@ -49,8 +49,11 @@ discord as a means of putting out awareness of his streams.
 
 #### Jimmy - New Member
 
-Jimmy, age 20, is a criminal justice major at a university in New York. Jimmy likes to spend his free time reading or watching documentaries. Jimmy has joined a club for other law majors to network, socialize and share resources. Jimmy wants to form new connections and make friends with other undergraduates in his field. This club’s members use Discord to communicate. Jimmy isn’t tech-illiterate but is not necessarily tech-savvy either. The only messaging app he’s familiar with is Facebook Messenger, so Discord is a new experience for him. Jimmy downloads the app and joins the server linked on the club’s webpage. He is initially overwhelmed by the options and settings available. Jimmy doesn’t want to join any large group discussions and is more so seeking to get to know some people individually. 
+Jimmy, age 20, is a criminal justice major at a university in New York. Jimmy likes to spend his free time reading or watching documentaries. Jimmy has joined a club for other law majors to network, socialize and share resources. Jimmy wants to form new connections and make friends with other undergraduates in his field. This club’s members use Discord to communicate. Jimmy isn’t tech-illiterate but is not necessarily tech-savvy either. The only messaging app he’s familiar with is Facebook Messenger, so Discord is a new experience for him. Jimmy downloads the app and joins the server linked on the club’s webpage. He is initially overwhelmed by the options and settings available. Jimmy doesn’t want to join any large group discussions and is more so seeking to get to know some people individually.
 
+#### Summer - Moderator
+
+Summer, age 32, is an owner of a baby product company and she herself is having one, 12 months old, daughter. In order to get information about customer needs for baby products, she runs a parenting club. There are 1 million members in the club, consist of 67.5% women and 32.5% men, and 88% of members are from 25-39 age groups. She uses Discord to communicate with announce to club members. Summer never used Discord before, and she is not a tech-friendly person. She was overwhelmed by a huge number of functions Discord have. Also, because she's running a company, she doesn't want to spend much time managing the Discord server but she still wants to make the Discord server page clean. Since the size of the club is big, there are some people who helps her running the club so she wants to assign some roles to people on Discord server. To keep the server page clean, she wants to filter new users and exorcise users who spoil the atmosphere. 
 
 ## Initially Planned Features
 
