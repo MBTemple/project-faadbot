@@ -11,7 +11,7 @@ async def on_message(message):
 
     if message.content.startswith('!'):
         msg = 'Hello World'.format(message)
-        await client.send_message(message.channel, msg)
+        await message.channel.send(msg)
 
 @client.event
 async def on_ready():
