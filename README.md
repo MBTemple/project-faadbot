@@ -66,6 +66,11 @@ with the increasing popularity of video game streaming in the past year, Alex wa
 Since a majority of the starting difficulty of a streamer stems from advertising your channel, Alex takes to
 discord as a means of putting out awareness of his streams. 
 
+#### Jimmy - New Member
+
+Jimmy, age 20, is a criminal justice major at a university in New York. Jimmy likes to spend his free time reading or watching documentaries. Jimmy has joined a club for other law majors to network, socialize and share resources. Jimmy wants to form new connections and make friends with other undergraduates in his field. This club’s members use Discord to communicate. Jimmy isn’t tech-illiterate but is not necessarily tech-savvy either. The only messaging app he’s familiar with is Facebook Messenger, so Discord is a new experience for him. Jimmy downloads the app and joins the server linked on the club’s webpage. He is initially overwhelmed by the options and settings available. Jimmy doesn’t want to join any large group discussions and is more so seeking to get to know some people individually. 
+
+
 ## Initially Planned Features
 
 - Adding and removing roles (normal user)
