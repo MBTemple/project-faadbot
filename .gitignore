@@ -4,3 +4,5 @@ __init__.py
 __pycache__
 cogs
 commandList.txt
+botCommands/__pycache__
+discordCommands/__pycache__
