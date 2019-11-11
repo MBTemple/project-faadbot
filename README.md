@@ -120,6 +120,8 @@ and teaching new skills through video tutorials to all the members.
 
 [Link to discord's python API](https://discordpy.readthedocs.io/en/latest/api.html)
 
+[Link to simple cog use example](https://gist.github.com/EvieePy/d78c061a4798ae81be9825468fe146be)
+
 
 ## Group Members
 

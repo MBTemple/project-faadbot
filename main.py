@@ -21,7 +21,8 @@ def get_prefix(bot, message):
 
 bot = commands.Bot(command_prefix= get_prefix, description = 'bot')
 
-cogs = ['cogs.startup']
+cogs = 'cogs.werewolfMan'
+#commandList.append(cogs)
 #populate list of cogs
 try: #parses and adds botCommand modules
     for commandFile in os.listdir(botCommandDir):
