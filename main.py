@@ -6,6 +6,7 @@ from discord.ext import commands
 
 discordCommandDir = 'discordCommands' #storage for discord affecting modules
 botCommandDir = 'botCommands' #storage for bot related modules
+commandListFile = 'commandList.txt' #file storage for loaded modules
 commandList = []
 buffer = []
 TOKEN = open("faadbotToken.txt", "r").read() #Gets OAuth2 Token for bot
@@ -24,6 +25,7 @@ bot = commands.Bot(command_prefix= get_prefix, description = 'bot')
 cogs = 'cogs.werewolfMan'
 #commandList.append(cogs)
 #populate list of cogs
+CLfile = open(commandListFile, "w")
 try: #parses and adds botCommand modules
     for commandFile in os.listdir(botCommandDir):
         if commandFile != '__init__.py' and commandFile.endswith(".py"): #dont want to add init file
@@ -31,6 +33,7 @@ try: #parses and adds botCommand modules
             foundCommand = botCommandDir + "." + buffer[0]
             #print(foundCommand + "\n") #testing
             commandList.append(foundCommand)
+            CLfile.write(foundCommand + "\n")
 except FileNotFoundError:
     print('No command files found')
 
@@ -41,8 +44,11 @@ try: #parses and adds discordCommand modules
             foundCommand = discordCommandDir + "." + buffer[0]
             #print(foundCommand + "\n") #testing
             commandList.append(foundCommand)
+            CLfile.write(foundCommand + "\n")
 except FileNotFoundError:
     print('No command files found')
+
+CLfile.close()
 
 if __name__ == '__main__':
     for extension in commandList:
