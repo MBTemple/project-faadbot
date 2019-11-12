@@ -6,9 +6,11 @@ class Nickname(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+	#Change nickname 
+	#Format: !nickname new_name
+	#Leave 'new_name' empty to reset back to original user name
     @commands.command(name='nickname')
     async def nickname(self, ctx, name: str = None):
-        """Change your nickname on a server. Leave empty to remove nick."""
         if name is None:
             # await ctx.message.delete()
             await ctx.message.author.edit(nick=name)
