@@ -118,7 +118,11 @@ and teaching new skills through video tutorials to all the members.
 
 [Link to the discord server for testing](https://discord.gg/gv97GxT)
 
-[Link to discord's python API](https://discordpy.readthedocs.io/en/latest/api.html)
+[Link to discord's python API](https://discordpy.readthedocs.io/en/latest/)
+
+[Link to simple cog use example](https://gist.github.com/EvieePy/d78c061a4798ae81be9825468fe146be)
+
+[Link to resource to search for in context use of specific methods in modules](https://www.programcreek.com/python/)
 
 
 ## Group Members

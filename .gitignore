@@ -1,1 +1,8 @@
 faadbotToken.txt
+__init__.py
+.pyc
+__pycache__
+cogs
+commandList.txt
+botCommands/__pycache__
+discordCommands/__pycache__
