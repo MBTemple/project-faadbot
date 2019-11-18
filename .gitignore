@@ -6,3 +6,4 @@ cogs
 commandList.txt
 botCommands/__pycache__
 discordCommands/__pycache__
+help.txt
