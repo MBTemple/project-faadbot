@@ -3,8 +3,8 @@ Commands Guide:
 
 All bot commands must be preceded with '!'.
 
-!helpme : displays this help information and list of commands
-    Variations: !HELP, !commands
+!help : displays this help information and list of commands
+    Variations: !HELP, !helpme, !commands
 
 !nickname <new_name> : changes nickname in the server to 'new_name'
     !nickname <no input> : resets nickname to original name

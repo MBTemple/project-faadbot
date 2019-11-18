@@ -2,12 +2,13 @@ import discord
 from discord.ext import commands
 
 
-class HelpMe(commands.Cog):
+class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        bot.remove_command('help')
 
-    @commands.command(aliases=['HELPME', 'helpME', 'HELPme', 'HELP', 'commands'])
-    async def helpme(self, ctx):
+    @commands.command(aliases=['helpme', 'HELPME', 'helpME', 'HELPme', 'HELP', 'commands', 'COMMANDS'])
+    async def help(self, ctx):
         delim = []
         await ctx.send('List of bot commands: \n')
         CLfile = open("commandList.txt", "r")
@@ -22,4 +23,4 @@ class HelpMe(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(HelpMe(bot))
+    bot.add_cog(Help(bot))
