@@ -17,10 +17,6 @@ class Help(commands.Cog):
             await ctx.send('!' + delim[1] + '\n')
         CLfile.close()
 
-        await ctx.send('\n-------------------------------\n')
-        helpFile = open("help.txt", "r")
-        await ctx.send(helpFile.read())
-
 
 def setup(bot):
     bot.add_cog(Help(bot))
