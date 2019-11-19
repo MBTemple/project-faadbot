@@ -4,4 +4,4 @@ __pycache__
 commandList.txt
 botCommands/__pycache__
 discordCommands/__pycache__
-cogs/log
+cogs/log/*.txt
