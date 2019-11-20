@@ -1,6 +1,7 @@
 import discord 
 
 from discord.ext import commands
+from discord.ext.commands import has_permissions
 
 class add_role(commands.Cog):
     def __init__(self,bot):
