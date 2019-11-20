@@ -23,7 +23,7 @@ def get_prefix(bot, message):
 bot = commands.Bot(command_prefix= get_prefix, description = 'bot')
 
 cogs = 'cogs.werewolfMan'
-#commandList.append(cogs)
+commandList.append(cogs)
 #populate list of cogs
 CLfile = open(commandListFile, "w")
 try: #parses and adds botCommand modules
