@@ -9,13 +9,15 @@ from mysql.connector import Error
 class werewolfMan(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
-        self.playerCount = 0
+        self.rolesAdded = False
+        self.dbPassLoc = "games/werewolfMod/localhostDBPW.txt"
 
     @commands.command(name = 'Wstartup')
     async def Wstartup(self, ctx):
         await ctx.send("Initializing werewolf mod. \n")
 
-        TOKEN = open("cogs/localhostDBPW.txt", "r").read() #gets localhost database password
+        TOKEN = open(self.dbPassLoc, "r").read() #gets localhost database password
+        self.rolesAdded = False
 
         try:
             connection = mysql.connector.connect(host = 'localhost',
@@ -44,8 +46,7 @@ class werewolfMan(commands.Cog):
             #in table roles, rolename is the name for a player role. Only role names
             #from the official werewolf game are acceptable here
             #roleStatus is a binary int that indicates if the role has been assigned to a player
-            makeRoles = "CREATE TABLE roles (id INT AUTO_INCREMENT PRIMARY KEY, \
-                roleName VARCHAR(255), roleStatus INT(1))"
+            makeRoles = "CREATE TABLE roles (roleName VARCHAR(255), roleStatus TINYINT)"
             #in table round, name is the player chosen name for the game instance
             #userID is the userID number tied to the discord user in the game
             #rolename is the name for a player role associated to the player entry
@@ -74,30 +75,96 @@ Ideally you should join in the order you are sitting")
 
     @commands.command(name = 'roleSetting')
     async def roleSetting(self, ctx):
-        with open("cogs/werewolfData.txt", "r") as playerInfo:
-            for line in playerInfo:
-                self.playerCount += 1
+        TOKEN = open(self.dbPassLoc, "r").read()
+        try:
+            connection = mysql.connector.connect(host = 'localhost', 
+                                                database = 'testDB',
+                                                user = 'root',
+                                                password = TOKEN)
+            if connection.is_connected():
+                cursor = connection.cursor()
+                print("****************************************************")
+                playerCount = cursor.rowcount
+                if playerCount == 0:
+                    await ctx.send("no players in game")
 
-        if self.playerCount == 0:
-            await ctx.send("no players in game")
+                elif playerCount < 3:
+                    await ctx.send("not enough players for a game. werewolf requires at least 3")
+                
+                elif playerCount == 3: #forces one night roles with single werewolf for 3 player group
+                    await ctx.send("defaulting to one-night roles with single werewolf due to party size")
+                    sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
+                    inVal = [
+                        ('werewolf', '0'),
+                        ('seer', '0'),
+                        ('robber', '0'), #need to decide later if robber and troublemaker should be kept
+                        ('troublemaker', '0'),
+                        ('villager', '0'),
+                        ('villager', '0'),
+                        ('villager', '0'),
+                    ]
 
-        elif self.playerCount == 3: #forces one night rules with single werewolf for 3 player group
-            await ctx.send("defaulting to one night rules with single werewolf due to party size")
-            with open("cogs/werewolfRoles.txt", 'w') as roles:
-                roles.write("one night:default\nWerewolf:0\n \
-Seer:0\nRobber:0\nTroublemaker:0\nVillager:0\nVillager:0\nVillager\n \
-") #rule description
+                    cursor.executemany(sql, inVal)
+                    connection.commit()
+                    print(cursor.rowcount, " roles were added")
+                    self.rolesAdded = True
 
-        elif(self.playerCount <=7): # forces one night rules with two werewolves for 7 or less players but more than 3
-            await ctx.send("defaulting to normal one night rules due to party size")
-            with open("cogs/werewolfRoles.txt", 'w') as roles:
-                roles.write("one night:default\nWerewolf:0\nWerewolf:0\n \
-Seer:0\nRobber:0\nTroublemaker:0\nVillager:0\nVillager:0\nVillager\n \
-") #rule description
+                elif playerCount <= 5: #forces one night roles with two werewolves for party between 7 and 3 players
+                    await ctx.send("defaulting to one-night roles due to party size")
+                    sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
+                    inVal = [
+                        ('werewolf', '0')
+                        ('werewolf', '0'),
+                        ('seer', '0'),
+                        ('robber', '0'), #need to decide later if robber and troublemaker should be kept
+                        ('troublemaker', '0'),
+                        ('villager', '0'),
+                        ('villager', '0'),
+                        ('villager', '0'),
+                    ]
+
+                    cursor.executemany(sql, inVal)
+                    connection.commit()
+                    print(cursor.rowcount, " roles were added")
+                    self.rolesAdded = True
+
+                elif playerCount <= 16: #smaller default werewolf ruleset
+                    ctx.send("using defualt werewolf roleset")
+                    sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
+                    inVal = [
+                        ('werewolf', '0'),
+                        ('werewolf', '0'),
+                        ('werewolf', '0'),
+                        ('werewolf', '0'),
+                        ('seer', '0'),
+                        ('seerInsane', '0'),
+                        ('hunter', '0'),
+                        ('fool', '0'),
+                        ('mason', '0'),
+                        ('mason', '0'),
+                        ('mason', '0'),
+                        ('bodyguard', '0'),
+                        ('pacifist', '0'),
+                        ('pacifist', '0'),
+                        ('gunsmith', '0'),
+                        ('villager', '0'),
+                        ('villager', '0'),
+                        ('villager', '0'),
+                        ('villager', '0'),                        
+                    ] #refer to: https://boardgamegeek.com/wiki/page/BGG_Werewolf_PBF_Role_List
+
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+                print("MySQL connection is closed")
+                print("****************************************************")
 
     @commands.command(name = 'join')
     async def join(self, ctx, arg1):
-        TOKEN = open("cogs/localhostDBPW.txt", "r").read()
+        TOKEN = open(self.dbPassLoc, "r").read()
         try:
             connection = mysql.connector.connect(host = 'localhost', 
                                                 database = 'testDB',
