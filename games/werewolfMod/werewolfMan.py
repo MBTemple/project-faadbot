@@ -76,8 +76,8 @@ Current role-sets: ``justVillagers``, ``basicSpecials``, ``allSpecials`` \n \
 Change roles Syntax: ``!roleSetting justVillagers`` \n \
 Game Start Syntax: ``!beginGame``")
 
-    @commands.command(name = 'help')
-    async def help(self,ctx):
+    @commands.command(name = 'Whelp')
+    async def Whelp(self,ctx):
         await ctx.send("Please input your name to join the game \n \
 Ideally you should join in the order you are sitting \n \
 Join Syntax: ``!join Playername`` \n \
@@ -305,75 +305,73 @@ Game Start Syntax: ``!beginGame``")
 
     @commands.command(name = 'beginGame')
     async def beginGame(self, ctx):
+        TOKEN = open(self.dbPassLoc, "r").read()
+        try:
+            connection = mysql.connector.connect(host = 'lolcalhost',
+                                                database = 'testDB',
+                                                user = 'root',
+                                                password = TOKEN)
 
-        getID = []
-        playerCount = 0
-        await ctx.send("beginning game with players:")
-        with open("cogs/werewolfData.txt", "r") as f:
-            for line in f:
-                if playerCount >= 0:
-                    getID = line.split(':')
-                    await ctx.send(getID[1])
-                    user = self.bot.get_user(int(getID[0]))
-                    await user.send("You are registered for the round") #works as reply
-                    await user.send("Use this chat to make actions each round")
-                playerCount+=1
+            if connection.is_connected():
+                cursor = connection.cursor()
+                print("****************************************************")
+                cursor.execute("SELECT * FROM players")
+                playerList = cursor.fetchall()
+                if self.rolesAdded:
+                    for entry in playerList: #format (userID, name)
+                        user = self.bot.get_user(int(entry[0]))
+                        await user.send("You are registered for the game")
+                        await user.send("Use this chat to make actions for each round")
+                        await user.send("Standby for role assignment")
+                        sql = "INSERT INTO round (name, userID, status) VALUES (%s, %s, %s)"
+                        roundVal = (entry[1], entry[0], "1")
+                        cursor.execute(sql, roundVal)
+                        connection.commit()
+                    #actually assigning roles now
+                    cursor.execute("SELECT * FROM round")
+                    roundList = cursor.fetchall()
+                    for entry in roundList: #format (id, name, userID, roleName, status)
+                        cursor.execute("SELECT * FROM roles WHERE roleStatus = '0'")
+                        openRolesList = cursor.fetchall()
+                        openRoles = []
+                        for role in openRolesList:
+                            openRoles.append(role[0])
+                        chosenRole = random.choice(openRoles)
+                        sql = "UPDATE round SET roleName = %s WHERE userID = %s"
+                        inputVal = (chosenRole, entry[2])
+                        cursor.execute(sql, inputVal)
+                        connection.commit()
+                        print("Player: " + entry[1] + ":" + entry[2] + "is role: " + chosenRole +"\n")
+                        user = self.bot.get_user(int(entry[2]))
+                        await user.send("Your player name is : " + entry[1])
+                        await user.send("You are assigned role: " + chosenRole)
+                        #now to remove chosenRole from openRole db
+                        sql = "UPDATE roles SET roleStatus = %s WHERE roleName = %s limit 1"
+                        roleUpdate = ("1", chosenRole)
+                        cursor.execute(sql, roleUpdate)
+                        connection.commit()
+                    await ctx.send("roles have been assigned")
 
-        if playerCount == 0:
-            await ctx.send("no players in game")
 
-        if(playerCount == 3 ): #forces one night rules with single werewolf for 3 player group
-            await ctx.send("defaulting to one night rules with single werewolf due to party size")
-            with open("cogs/werewolfRoles.txt", 'w') as roles:
-                roles.write("one night:default\nWerewolf:0\n \
-Seer:0\nRobber:0\nTroublemaker:0\nVillager:0\nVillager:0\nVillager\n \
-") #rule description
+                else:
+                    await ctx.send("roles not yet set. Please set roles first")
+        except Error as e:
+            print("Error while conecting to MySQL", e)
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+                print("MySQL connection is closed")
+                print("****************************************************")
 
-        elif(playerCount <=7): # forces one night rules with two werewolves for 7 or less players but more than 3
-            await ctx.send("defaulting to normal one night rules due to party size")
-            with open("cogs/werewolfRoles.txt", 'w') as roles:
-                roles.write("one night:default\nWerewolf:0\nWerewolf:0\n \
-Seer:0\nRobber:0\nTroublemaker:0\nVillager:0\nVillager:0\nVillager\n \
-") #rule description
-
-
-            #roles.write("Werewolf:0\nWerewolf:0\nSeer:0\nRobber:0\nTroublemaker:0\nVillager:0\n") #total of 6 roles
-            #number after colon in werewolfRoles determines if role is taken or not. 1 means claimed
-        
-        #await ctx.send("assigning roles, standby for messages")
-        noWerewolf = True #false to skip over this temporarily for testing
-        while(noWerewolf):
-            g = open("cogs/werewolfRound.txt", "w") #used to store round by round info
-            playerInfo = open("cogs/werewolfData.txt", "r")
-            #will player information as "userID:PlayerName:Role:GameStatus" with GameStatus being alive or dead
-            #await ctx.send("Assigning player roles")
-            for line in playerInfo:   
-                roles = open("cogs/werewolfRoles.txt", "r")            
-                openRoles = []
-                for role in roles:
-                    tempRoles = []
-                    tempRoles = role.split(":")
-                    if tempRoles[1] == "0\n":
-                        openRoles.append(tempRoles[0])
-                        print("Werewolf Management: Role " + tempRoles[0] + " added to openRoles")
-                roles.close()
-                chosenRole = random.choice(openRoles)
-                openRoles.remove(chosenRole)
-                #await ctx.send(chosenRole) #here to test
-                if chosenRole == "Werewolf":
-                    noWerewolf = False
-                player = line[:-1]
-                print("Werewolf Management: Chosen role for " + player + " is: " + chosenRole)
-                g.write(player + ":" + chosenRole + ":Alive\n")
-                roles = open("cogs/werewolfRoles.txt", "w")
-                for role in openRoles:
-                    roles.write(role + ":0\n")
-
-                
-        roles.close()
-        g.close()
-        playerInfo.close()
-        await ctx.send("role assignment complete")
+# old code ################################################
+#                                                         #
+#                                                         #
+#                                                         #
+#                                                         #
+#                                                         #
+#                                                         #
+# old code ################################################
 
 
 def setup(bot):
