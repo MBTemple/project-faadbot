@@ -3,6 +3,7 @@ from discord.ext import commands
 import random
 import mysql.connector
 from mysql.connector import Error
+import math
 
 #currently supports a maximum of 10 players
 
@@ -68,13 +69,42 @@ class werewolfMan(commands.Cog):
                 print("****************************************************")
 
         await ctx.send("Please input your name to join the game \n \
+Ideally you should join in the order you are sitting \n \
 Join Syntax: ``!join Playername`` \n \
-Change roles Syntax: ``!roleSetting`` \n \
-Game Start Syntax: ``!beginGame`` \n \
-Ideally you should join in the order you are sitting")
+After all players have joined but before starting the game you have to establish a role-set \n \
+Current role-sets: ``justVillagers``, ``basicSpecials``, ``allSpecials`` \n \
+Change roles Syntax: ``!roleSetting justVillagers`` \n \
+Game Start Syntax: ``!beginGame``")
+
+    @commands.command(name = 'help')
+    async def help(self,ctx):
+        await ctx.send("Please input your name to join the game \n \
+Ideally you should join in the order you are sitting \n \
+Join Syntax: ``!join Playername`` \n \
+After all players have joined but before starting the game you have to establish a role-set \n \
+Current role-sets: ``justVillagers``, ``basicSpecials``, ``allSpecials`` \n \
+Change roles Syntax: ``!roleSetting justVillagers`` \n \
+Game Start Syntax: ``!beginGame``")
 
     @commands.command(name = 'roleSetting')
-    async def roleSetting(self, ctx):
+    async def roleSetting(self, ctx, arg1):
+        if arg1 == "justVillagers":
+            specialRoles = False
+            basicRoles = False
+            await ctx.send("special roles are disabled")
+        elif arg1 == "allSpecials":
+            specialRoles = True
+            basicRoles = False
+            await ctx.send("special roles are enabled")
+        elif arg1 == "basicSpecials":
+            specialRoles = False
+            basicRoles = True
+            await ctx.send("only seer and doctor are enabled")
+        else:
+            specialRoles = False
+            basicRoles = False
+            await ctx.send("Invalid input, defaulting to justVillagers")
+
         TOKEN = open(self.dbPassLoc, "r").read()
         try:
             connection = mysql.connector.connect(host = 'localhost', 
@@ -91,17 +121,16 @@ Ideally you should join in the order you are sitting")
                 elif playerCount < 3:
                     await ctx.send("not enough players for a game. werewolf requires at least 3")
                 
-                elif playerCount == 3: #forces one night roles with single werewolf for 3 player group
+                elif playerCount == 3 and specialRoles: #forces one night roles with single werewolf for 3 player group
                     await ctx.send("defaulting to one-night roles with single werewolf due to party size")
                     sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
                     inVal = [
-                        ('werewolf', '0'),
-                        ('seer', '0'),
+                        ('werewolf', '0'),                            ('seer', '0'),
                         ('robber', '0'), #need to decide later if robber and troublemaker should be kept
                         ('troublemaker', '0'),
                         ('villager', '0'),
                         ('villager', '0'),
-                        ('villager', '0'),
+                        ('villager', '0')
                     ]
 
                     cursor.executemany(sql, inVal)
@@ -109,7 +138,7 @@ Ideally you should join in the order you are sitting")
                     print(cursor.rowcount, " roles were added")
                     self.rolesAdded = True
 
-                elif playerCount <= 5: #forces one night roles with two werewolves for party between 7 and 3 players
+                elif playerCount <= 5 and specialRoles: #forces one night roles with two werewolves for party between 7 and 3 players
                     await ctx.send("defaulting to one-night roles due to party size")
                     sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
                     inVal = [
@@ -120,7 +149,7 @@ Ideally you should join in the order you are sitting")
                         ('troublemaker', '0'),
                         ('villager', '0'),
                         ('villager', '0'),
-                        ('villager', '0'),
+                        ('villager', '0')
                     ]
 
                     cursor.executemany(sql, inVal)
@@ -128,8 +157,8 @@ Ideally you should join in the order you are sitting")
                     print(cursor.rowcount, " roles were added")
                     self.rolesAdded = True
 
-                elif playerCount <= 16: #smaller default werewolf ruleset
-                    ctx.send("using defualt werewolf roleset")
+                elif playerCount <= 16 and specialRoles: #smaller default werewolf ruleset
+                    await ctx.send("using defualt werewolf roleset")
                     sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
                     inVal = [
                         ('werewolf', '0'),
@@ -150,8 +179,68 @@ Ideally you should join in the order you are sitting")
                         ('villager', '0'),
                         ('villager', '0'),
                         ('villager', '0'),
-                        ('villager', '0'),                        
+                        ('villager', '0')                       
                     ] #refer to: https://boardgamegeek.com/wiki/page/BGG_Werewolf_PBF_Role_List
+
+                elif playerCount < 5 and basicRoles:
+                    await ctx.send("not enough players for game with seer and doctor. Need at least 5")
+
+                elif playerCount >= 5 and basicRoles:
+                    numWerewolves = math.floor(playerCount/5)
+                    await ctx.send("there will be " + numWerewolves + " werewolves")
+                    sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
+                    wwinVal = [
+                        ('werewolf', '0')
+                    ]
+
+                    vilinVal = [
+                        ('villager', '0')
+                    ]
+
+                    otherinVal = [
+                        ('seer', '0'),
+                        ('doctor', '0')
+                    ]
+                    #adding just seer and doctor
+                    cursor.executemany(sql, otherinVal)
+                    connection.commit()
+                    print(cursor.rowcount, " roles were added")
+
+                    for _ in range(numWerewolves):
+                        cursor.execute(sql, wwinVal)
+                        connection.commit()
+                        print(cursor.rowcount, " werewolf added")
+
+                    numVillagers = playerCount - numWerewolves - 2
+                    for _ in range(numVillagers):
+                        cursor.execute(sql, vilinVal)
+                        connection.commit()
+                        print(cursor.rowcount, " villager added")
+                    self.rolesAdded = True
+
+                elif playerCount >= 5:
+                    numWerewolves = math.floor(playerCount/5)
+                    await ctx.send("there will be " + numWerewolves + " werewolves")
+                    sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
+                    wwinVal = [
+                        ('werewolf', '0')
+                    ]
+
+                    vilinVal = [
+                        ('villager', '0')
+                    ]
+
+                    for _ in range(numWerewolves):
+                        cursor.execute(sql, wwinVal)
+                        connection.commit()
+                        print(cursor.rowcount, " werewolf added")
+
+                    numVillagers = playerCount - numWerewolves
+                    for _ in range(numVillagers):
+                        cursor.execute(sql, vilinVal)
+                        connection.commit()
+                        print(cursor.rowcount, " villager added")
+                    self.rolesAdded = True
 
         except Error as e:
             print("Error while connecting to MySQL", e)
@@ -165,7 +254,7 @@ Ideally you should join in the order you are sitting")
     @commands.command(name = 'join')
     async def join(self, ctx, arg1):
         TOKEN = open(self.dbPassLoc, "r").read()
-        try:
+        try: 
             connection = mysql.connector.connect(host = 'localhost', 
                                                 database = 'testDB',
                                                 user = 'root',
