@@ -53,7 +53,7 @@ class werewolfMan(commands.Cog):
             #rolename is the name for a player role associated to the player entry
             #status is a binary int indicating if the player is alive or not (1 for alive)
             makeRound = "CREATE TABLE round (id INT AUTO_INCREMENT PRIMARY KEY, \
-                name VARCHAR(255), userID INT(100), roleName VARCHAR(255), \
+                name VARCHAR(255), userID VARCHAR(50), roleName VARCHAR(255), \
                 status INT(1))"
 
             cursor.execute(makePlayers)
@@ -114,14 +114,16 @@ Game Start Syntax: ``!beginGame``")
             if connection.is_connected():
                 cursor = connection.cursor()
                 print("****************************************************")
-                playerCount = cursor.rowcount
-                if playerCount == 0:
+                
+                cursor.execute("SELECT COUNT(*) FROM players")
+                playerCount = cursor.fetchone()
+                if playerCount[0] == 0:
                     await ctx.send("no players in game")
 
-                elif playerCount < 3:
+                elif playerCount[0] < 3:
                     await ctx.send("not enough players for a game. werewolf requires at least 3")
                 
-                elif playerCount == 3 and specialRoles: #forces one night roles with single werewolf for 3 player group
+                elif playerCount[0] == 3 and specialRoles: #forces one night roles with single werewolf for 3 player group
                     await ctx.send("defaulting to one-night roles with single werewolf due to party size")
                     sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
                     inVal = [
@@ -138,7 +140,7 @@ Game Start Syntax: ``!beginGame``")
                     print(cursor.rowcount, " roles were added")
                     self.rolesAdded = True
 
-                elif playerCount <= 5 and specialRoles: #forces one night roles with two werewolves for party between 7 and 3 players
+                elif playerCount[0] <= 5 and specialRoles: #forces one night roles with two werewolves for party between 7 and 3 players
                     await ctx.send("defaulting to one-night roles due to party size")
                     sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
                     inVal = [
@@ -157,7 +159,7 @@ Game Start Syntax: ``!beginGame``")
                     print(cursor.rowcount, " roles were added")
                     self.rolesAdded = True
 
-                elif playerCount <= 16 and specialRoles: #smaller default werewolf ruleset
+                elif playerCount[0] <= 16 and specialRoles: #smaller default werewolf ruleset
                     await ctx.send("using defualt werewolf roleset")
                     sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
                     inVal = [
@@ -182,24 +184,19 @@ Game Start Syntax: ``!beginGame``")
                         ('villager', '0')                       
                     ] #refer to: https://boardgamegeek.com/wiki/page/BGG_Werewolf_PBF_Role_List
 
-                elif playerCount < 5 and basicRoles:
+                elif playerCount[0] < 5 and basicRoles:
                     await ctx.send("not enough players for game with seer and doctor. Need at least 5")
 
-                elif playerCount >= 5 and basicRoles:
-                    numWerewolves = math.floor(playerCount/5)
-                    await ctx.send("there will be " + numWerewolves + " werewolves")
+                elif playerCount[0] >= 5 and basicRoles:
+                    numWerewolves = math.floor(playerCount[0]/5)
+                    await ctx.send("there will be {} werewolves".format(numWerewolves))
                     sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
-                    wwinVal = [
-                        ('werewolf', '0')
-                    ]
-
-                    vilinVal = [
-                        ('villager', '0')
-                    ]
+                    wwinVal = ('werewolf', '0')
+                    vilinVal = ('villager', '0')
 
                     otherinVal = [
                         ('seer', '0'),
-                        ('doctor', '0')
+                        ('bodyguard', '0')
                     ]
                     #adding just seer and doctor
                     cursor.executemany(sql, otherinVal)
@@ -211,31 +208,27 @@ Game Start Syntax: ``!beginGame``")
                         connection.commit()
                         print(cursor.rowcount, " werewolf added")
 
-                    numVillagers = playerCount - numWerewolves - 2
+                    numVillagers = playerCount[0] - numWerewolves - 2
                     for _ in range(numVillagers):
                         cursor.execute(sql, vilinVal)
                         connection.commit()
                         print(cursor.rowcount, " villager added")
                     self.rolesAdded = True
 
-                elif playerCount >= 5:
-                    numWerewolves = math.floor(playerCount/5)
-                    await ctx.send("there will be " + numWerewolves + " werewolves")
+                elif playerCount[0] >= 5:
+                    numWerewolves = math.floor(playerCount[0]/5)
+                    await ctx.send("there will be {} werewolves".format(numWerewolves))
                     sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
-                    wwinVal = [
-                        ('werewolf', '0')
-                    ]
+                    wwinVal = ('werewolf', '0')
 
-                    vilinVal = [
-                        ('villager', '0')
-                    ]
+                    vilinVal = ('villager', '0')
 
                     for _ in range(numWerewolves):
                         cursor.execute(sql, wwinVal)
                         connection.commit()
                         print(cursor.rowcount, " werewolf added")
 
-                    numVillagers = playerCount - numWerewolves
+                    numVillagers = playerCount[0] - numWerewolves
                     for _ in range(numVillagers):
                         cursor.execute(sql, vilinVal)
                         connection.commit()
@@ -307,7 +300,7 @@ Game Start Syntax: ``!beginGame``")
     async def beginGame(self, ctx):
         TOKEN = open(self.dbPassLoc, "r").read()
         try:
-            connection = mysql.connector.connect(host = 'lolcalhost',
+            connection = mysql.connector.connect(host = 'localhost',
                                                 database = 'testDB',
                                                 user = 'root',
                                                 password = TOKEN)
@@ -320,9 +313,8 @@ Game Start Syntax: ``!beginGame``")
                 if self.rolesAdded:
                     for entry in playerList: #format (userID, name)
                         user = self.bot.get_user(int(entry[0]))
-                        await user.send("You are registered for the game")
-                        await user.send("Use this chat to make actions for each round")
-                        await user.send("Standby for role assignment")
+                        await user.send("Use this chat to make actions for each round. \
+                            Standby for role assignment")
                         sql = "INSERT INTO round (name, userID, status) VALUES (%s, %s, %s)"
                         roundVal = (entry[1], entry[0], "1")
                         cursor.execute(sql, roundVal)
@@ -343,8 +335,7 @@ Game Start Syntax: ``!beginGame``")
                         connection.commit()
                         print("Player: " + entry[1] + ":" + entry[2] + "is role: " + chosenRole +"\n")
                         user = self.bot.get_user(int(entry[2]))
-                        await user.send("Your player name is : " + entry[1])
-                        await user.send("You are assigned role: " + chosenRole)
+                        await user.send("You are: {} and your role is: {}".format(entry[1], chosenRole))
                         #now to remove chosenRole from openRole db
                         sql = "UPDATE roles SET roleStatus = %s WHERE roleName = %s limit 1"
                         roleUpdate = ("1", chosenRole)
