@@ -12,6 +12,13 @@ class werewolfMan(commands.Cog):
         self.bot = bot
         self.rolesAdded = False
         self.dbPassLoc = "games/werewolfMod/localhostDBPW.txt"
+        self.lynchActive = False
+        self.lynchSeconded = False
+        self.lynchAttempt = 0
+        self.isDay = True
+        self.statusList = None
+        self.statusRef = None #reference to statusList message in chat for editing
+
 
     @commands.command(name = 'Wstartup')
     async def Wstartup(self, ctx):
@@ -19,6 +26,8 @@ class werewolfMan(commands.Cog):
 
         TOKEN = open(self.dbPassLoc, "r").read() #gets localhost database password
         self.rolesAdded = False
+        self.statusList = None
+        self.statusRef = None
 
         try:
             connection = mysql.connector.connect(host = 'localhost',
@@ -70,24 +79,24 @@ class werewolfMan(commands.Cog):
 
         await ctx.send("Please input your name to join the game \n \
 Ideally you should join in the order you are sitting \n \
-Join Syntax: ``!join Playername`` \n \
+Join Syntax: ``!Wjoin Playername`` \n \
 After all players have joined but before starting the game you have to establish a role-set \n \
 Current role-sets: ``justVillagers``, ``basicSpecials``, ``allSpecials`` \n \
-Change roles Syntax: ``!roleSetting justVillagers`` \n \
+Change roles Syntax: ``!WroleSetting justVillagers`` \n \
 Game Start Syntax: ``!beginGame``")
 
     @commands.command(name = 'Whelp')
     async def Whelp(self,ctx):
         await ctx.send("Please input your name to join the game \n \
 Ideally you should join in the order you are sitting \n \
-Join Syntax: ``!join Playername`` \n \
+Join Syntax: ``!Wjoin Playername`` \n \
 After all players have joined but before starting the game you have to establish a role-set \n \
 Current role-sets: ``justVillagers``, ``basicSpecials``, ``allSpecials`` \n \
-Change roles Syntax: ``!roleSetting justVillagers`` \n \
+Change roles Syntax: ``!WroleSetting justVillagers`` \n \
 Game Start Syntax: ``!beginGame``")
 
-    @commands.command(name = 'roleSetting')
-    async def roleSetting(self, ctx, arg1):
+    @commands.command(name = 'WroleSetting')
+    async def WroleSetting(self, ctx, arg1):
         if arg1 == "justVillagers":
             specialRoles = False
             basicRoles = False
@@ -185,7 +194,7 @@ Game Start Syntax: ``!beginGame``")
                     ] #refer to: https://boardgamegeek.com/wiki/page/BGG_Werewolf_PBF_Role_List
 
                 elif playerCount[0] < 5 and basicRoles:
-                    await ctx.send("not enough players for game with seer and doctor. Need at least 5")
+                    await ctx.send("not enough players for game with seer and bodyguard. Need at least 5")
 
                 elif playerCount[0] >= 5 and basicRoles:
                     numWerewolves = math.floor(playerCount[0]/5)
@@ -244,8 +253,8 @@ Game Start Syntax: ``!beginGame``")
                 print("MySQL connection is closed")
                 print("****************************************************")
 
-    @commands.command(name = 'join')
-    async def join(self, ctx, arg1):
+    @commands.command(name = 'Wjoin')
+    async def Wjoin(self, ctx, arg1):
         TOKEN = open(self.dbPassLoc, "r").read()
         try: 
             connection = mysql.connector.connect(host = 'localhost', 
@@ -296,8 +305,8 @@ Game Start Syntax: ``!beginGame``")
                 print("MySQL connection is closed")
                 print("****************************************************")
 
-    @commands.command(name = 'beginGame')
-    async def beginGame(self, ctx):
+    @commands.command(name = 'WbeginGame')
+    async def WbeginGame(self, ctx):
         TOKEN = open(self.dbPassLoc, "r").read()
         try:
             connection = mysql.connector.connect(host = 'localhost',
@@ -311,7 +320,9 @@ Game Start Syntax: ``!beginGame``")
                 cursor.execute("SELECT * FROM players")
                 playerList = cursor.fetchall()
                 if self.rolesAdded:
+                    self.statusList = "```Player statuses:\n" #starting status list
                     for entry in playerList: #format (userID, name)
+                        self.statusList = self.statusList + "-{}: Alive\n".format(entry[1]) #adds each player to statusList in loop
                         user = self.bot.get_user(int(entry[0]))
                         await user.send("Use this chat to make actions for each round. \
                             Standby for role assignment")
@@ -319,6 +330,8 @@ Game Start Syntax: ``!beginGame``")
                         roundVal = (entry[1], entry[0], "1")
                         cursor.execute(sql, roundVal)
                         connection.commit()
+                    #all players now added to statusList, adding divider
+                    self.statusList = self.statusList + "------------------------------------\nActions:\n!Wlynch"#adding !Wlynch since it is an action every player has
                     #actually assigning roles now
                     cursor.execute("SELECT * FROM round")
                     roundList = cursor.fetchall()
@@ -335,13 +348,42 @@ Game Start Syntax: ``!beginGame``")
                         connection.commit()
                         print("Player: " + entry[1] + ":" + entry[2] + "is role: " + chosenRole +"\n")
                         user = self.bot.get_user(int(entry[2]))
-                        await user.send("You are: {} and your role is: {}".format(entry[1], chosenRole))
+                        await user.send("``You are: {} and your role is: {}``".format(entry[1], chosenRole))
+
+                        #section for sending statusList
+                        if chosenRole == "villager":
+                            tempStatStr = self.statusList + "```"
+                        elif chosenRole == "werewolf":
+                            tempStatStr = self.statusList + "\n!Wkill```"
+                        elif chosenRole == "seer":
+                            tempStatStr = self.statusList + "\n!Wcheck```"
+                        elif chosenRole == "bodyguard":
+                            tempStatStr = self.statusList + "\n!Wprotect```"
+                        self.statusRef = await user.send(tempStatStr)
+
                         #now to remove chosenRole from openRole db
-                        sql = "UPDATE roles SET roleStatus = %s WHERE roleName = %s limit 1"
+                        sql = "UPDATE roles SET roleStatus = %s WHERE roleName = %s AND roleStatus = '0' limit 1"
                         roleUpdate = ("1", chosenRole)
                         cursor.execute(sql, roleUpdate)
                         connection.commit()
-                    await ctx.send("roles have been assigned")
+                    #await ctx.send("roles have been assigned")
+                    #notify werewolves of fellow werewolves
+                    #theres probably a more efficient way of doing this
+                    #but this was all I could think of
+                    cursor.execute("SELECT * FROM round WHERE roleName = 'werewolf'")
+                    lycanList = cursor.fetchall()
+                    werewolfList = []
+                    for werewolf in lycanList:
+                        werewolfList.append(werewolf[1])
+                    cursor.execute("SELECT * FROM players")
+                    playerList = cursor.fetchall()
+                    for player in playerList:
+                        for werewolf in werewolfList:
+                            if player[1] == werewolf:
+                                user = self.bot.get_user(int(player[0]))
+                                await user.send("Werewolf list: ")
+                                for werewolf in werewolfList:
+                                    await user.send(werewolf)
 
 
                 else:
@@ -355,14 +397,63 @@ Game Start Syntax: ``!beginGame``")
                 print("MySQL connection is closed")
                 print("****************************************************")
 
-# old code ################################################
-#                                                         #
-#                                                         #
-#                                                         #
-#                                                         #
-#                                                         #
-#                                                         #
-# old code ################################################
+# Action commands #########################################
+###########################################################                                                         
+###########################################################                                                          
+###########################################################                                                          
+###########################################################                                                          
+###########################################################                                                          
+###########################################################                                                          
+# Action commands #########################################
+
+    @commands.command(name = 'Wlynch')
+    async def Wlynch(self, ctx, arg1):
+        TOKEN = open(self.dbPassLoc, "r").read()
+        try:
+            connection = mysql.connector.connect(host = 'localhost', 
+                                                database = 'testDB',
+                                                user = 'root',
+                                                password = TOKEN)
+            if connection.is_connected():
+                cursor = connection.cursor()
+                print("****************************************************")
+                #there are two votes that can occur for lynching
+                #each lynching notion that is initiated must have a second person backing it
+                #If a lynching notion passes, it immediately goes to night
+                if self.isDay and not self.lynchActive:
+                    arg1Exists = False
+                    cursor.execute("SELECT * FROM players")
+                    playerList = cursor.fetchall()
+                    
+                    for player in playerList:
+                        if player[1] == arg1:
+                            arg1Exists = True
+                    if arg1Exists:
+                        initiator = ctx.message.author.id
+                        cursor.execute("SELECT * FROM players WHERE userID = {}".format(initiator))
+                        initiatorName = cursor.fetchone()
+                        for player in playerList:
+                            user = self.bot.get_user(int(player[0]))
+                            await user.send("{} has started a lynch vote against {} but needs \
+                                someone to second this notion! (User ``!Wlynch Second`` to second \
+                                the notion)".format(initiatorName[1], arg1))
+                        self.lynchActive = True
+
+                #elif self.isDay and self.lynchActive and arg1 == "second": #someone seconds a lynch attempt
+
+
+                else:
+                    await ctx.send("You can't use this until the daytime!")
+
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+                print("MySQL connection is closed")
+                print("****************************************************")
+
 
 
 def setup(bot):
