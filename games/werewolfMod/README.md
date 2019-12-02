@@ -1,5 +1,7 @@
 # Werewolf Moderator
 
+![Werewolf pic][werewolfIMG.png]
+
 This game is intended to work as a stand in for the player role of moderator so
 that all people in attendance can play the game itself. This is done by using discord
 as a medium for transmitting both public and private game information regarding the
