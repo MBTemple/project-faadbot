@@ -6,6 +6,7 @@ from discord.ext import commands
 
 discordCommandDir = 'discordCommands' #storage for discord affecting modules
 botCommandDir = 'botCommands' #storage for bot related modules
+gamesCommandDir = 'games' #storage for game modules
 commandListFile = 'commandList.txt' #file storage for loaded modules
 commandList = []
 buffer = []
@@ -22,8 +23,6 @@ def get_prefix(bot, message):
 
 bot = commands.Bot(command_prefix= get_prefix, description = 'bot')
 
-cogs = 'cogs.werewolfMan'
-commandList.append(cogs)
 #populate list of cogs
 CLfile = open(commandListFile, "w")
 try: #parses and adds botCommand modules
@@ -45,6 +44,21 @@ try: #parses and adds discordCommand modules
             #print(foundCommand + "\n") #testing
             commandList.append(foundCommand)
             CLfile.write(foundCommand + "\n")
+except FileNotFoundError:
+    print('No command files found')
+
+try: #parses and adds game modules
+    for gameDir in os.listdir(gamesCommandDir):
+        if gameDir != '__init__.py':
+            #print(gameDir + "\n")
+            newGameDir = gamesCommandDir + "/" + gameDir
+            for commandFile in os.listdir(newGameDir):
+                if commandFile != '__init__.py' and commandFile.endswith(".py"): #dont want to add init file
+                    buffer = commandFile.split('.')
+                    foundCommand = gamesCommandDir + "." + gameDir + "." + buffer[0]
+                    #print(foundCommand +"\n") #testing
+                    commandList.append(foundCommand)
+                    CLfile.write(foundCommand + "\n")
 except FileNotFoundError:
     print('No command files found')
 
