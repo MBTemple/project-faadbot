@@ -4,6 +4,7 @@ import random
 import mysql.connector
 from mysql.connector import Error
 import math
+from games.werewolfMod.helpers.werewolfLogic import werewolfLogic
 
 #currently supports a maximum of 10 players
 
@@ -18,64 +19,16 @@ class werewolfMan(commands.Cog):
         self.isDay = True
         self.statusList = None
         self.statusRef = None #reference to statusList message in chat for editing
-
+        self.werewolfHelper = werewolfLogic()
 
     @commands.command(name = 'Wstartup')
     async def Wstartup(self, ctx):
         await ctx.send("Initializing werewolf mod. \n")
-
-        TOKEN = open(self.dbPassLoc, "r").read() #gets localhost database password
         self.rolesAdded = False
         self.statusList = None
         self.statusRef = None
 
-        try:
-            connection = mysql.connector.connect(host = 'localhost',
-                                                database = 'testDB',
-                                                user = 'root',
-                                                password = TOKEN)
-            
-            if connection.is_connected():
-                print("****************************************************")
-                print("Connected to database for reset")
-            cursor = connection.cursor()
-
-            #drops tables needed for game if exists
-            sql = "DROP TABLE IF EXISTS players"
-            cursor.execute(sql)
-            sql = "DROP TABLE IF EXISTS roles"
-            cursor.execute(sql)
-            sql = "DROP TABLE IF EXISTS round"
-            cursor.execute(sql)
-            #all required tables should no longer exist now. Recreating tables
-
-            #in table players, name is the player chosen name for the game instance
-            #userID is the userID number tied to the discord user in the game
-            makePlayers = "CREATE TABLE players (userID VARCHAR(50) PRIMARY KEY, \
-                name VARCHAR(255) NOT NULL)"
-            #in table roles, rolename is the name for a player role. Only role names
-            #from the official werewolf game are acceptable here
-            #roleStatus is a binary int that indicates if the role has been assigned to a player
-            makeRoles = "CREATE TABLE roles (roleName VARCHAR(255), roleStatus TINYINT)"
-            #in table round, name is the player chosen name for the game instance
-            #userID is the userID number tied to the discord user in the game
-            #rolename is the name for a player role associated to the player entry
-            #status is a binary int indicating if the player is alive or not (1 for alive)
-            makeRound = "CREATE TABLE round (id INT AUTO_INCREMENT PRIMARY KEY, \
-                name VARCHAR(255), userID VARCHAR(50), roleName VARCHAR(255), \
-                status INT(1))"
-
-            cursor.execute(makePlayers)
-            cursor.execute(makeRoles)
-            cursor.execute(makeRound)
-        except Error as e:
-            print("Error while connecting to MySQL", e)
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
-                print("MySQL connection for reset is closed")
-                print("****************************************************")
+        self.werewolfHelper.WLstartup() #handles all MySQL actions for startup
 
         await ctx.send("Please input your name to join the game \n \
 Ideally you should join in the order you are sitting \n \
@@ -83,7 +36,7 @@ Join Syntax: ``!Wjoin Playername`` \n \
 After all players have joined but before starting the game you have to establish a role-set \n \
 Current role-sets: ``justVillagers``, ``basicSpecials``, ``allSpecials`` \n \
 Change roles Syntax: ``!WroleSetting justVillagers`` \n \
-Game Start Syntax: ``!beginGame``")
+Game Start Syntax: ``!WbeginGame``")
 
     @commands.command(name = 'Whelp')
     async def Whelp(self,ctx):
@@ -93,7 +46,7 @@ Join Syntax: ``!Wjoin Playername`` \n \
 After all players have joined but before starting the game you have to establish a role-set \n \
 Current role-sets: ``justVillagers``, ``basicSpecials``, ``allSpecials`` \n \
 Change roles Syntax: ``!WroleSetting justVillagers`` \n \
-Game Start Syntax: ``!beginGame``")
+Game Start Syntax: ``!WbeginGame``")
 
     @commands.command(name = 'WroleSetting')
     async def WroleSetting(self, ctx, arg1):
@@ -200,12 +153,12 @@ Game Start Syntax: ``!beginGame``")
                     numWerewolves = math.floor(playerCount[0]/5)
                     await ctx.send("there will be {} werewolves".format(numWerewolves))
                     sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
-                    wwinVal = ('werewolf', '0')
-                    vilinVal = ('villager', '0')
+                    wwinVal = ('werewolf', '0', '!Wkill')
+                    vilinVal = ('villager', '0', None)
 
                     otherinVal = [
-                        ('seer', '0'),
-                        ('bodyguard', '0')
+                        ('seer', '0', '!Wcheck'),
+                        ('bodyguard', '0', '!Wprotect')
                     ]
                     #adding just seer and doctor
                     cursor.executemany(sql, otherinVal)
@@ -228,9 +181,9 @@ Game Start Syntax: ``!beginGame``")
                     numWerewolves = math.floor(playerCount[0]/5)
                     await ctx.send("there will be {} werewolves".format(numWerewolves))
                     sql = "INSERT INTO roles (roleName, roleStatus) VALUES (%s, %s)"
-                    wwinVal = ('werewolf', '0')
+                    wwinVal = ('werewolf', '0', '!Wkill')
 
-                    vilinVal = ('villager', '0')
+                    vilinVal = ('villager', '0', None)
 
                     for _ in range(numWerewolves):
                         cursor.execute(sql, wwinVal)
@@ -335,15 +288,15 @@ Game Start Syntax: ``!beginGame``")
                     #actually assigning roles now
                     cursor.execute("SELECT * FROM round")
                     roundList = cursor.fetchall()
-                    for entry in roundList: #format (id, name, userID, roleName, status)
+                    for entry in roundList: #format (id, name, userID, roleName, status, specialAction)
                         cursor.execute("SELECT * FROM roles WHERE roleStatus = '0'")
                         openRolesList = cursor.fetchall()
                         openRoles = []
                         for role in openRolesList:
-                            openRoles.append(role[0])
+                            openRoles.append((role[0], role[2]))
                         chosenRole = random.choice(openRoles)
-                        sql = "UPDATE round SET roleName = %s WHERE userID = %s"
-                        inputVal = (chosenRole, entry[2])
+                        sql = "UPDATE round SET roleName = %s, specialAction = %s WHERE userID = %s"
+                        inputVal = (chosenRole, entry[2]) #TODO
                         cursor.execute(sql, inputVal)
                         connection.commit()
                         print("Player: " + entry[1] + ":" + entry[2] + "is role: " + chosenRole +"\n")
@@ -351,14 +304,13 @@ Game Start Syntax: ``!beginGame``")
                         await user.send("``You are: {} and your role is: {}``".format(entry[1], chosenRole))
 
                         #section for sending statusList
-                        if chosenRole == "villager":
-                            tempStatStr = self.statusList + "```"
-                        elif chosenRole == "werewolf":
+                        if chosenRole == "werewolf":
                             tempStatStr = self.statusList + "\n!Wkill```"
                         elif chosenRole == "seer":
-                            tempStatStr = self.statusList + "\n!Wcheck```"
+                            tempStatStr = self.statusList + "\n!Wcheck```" 
                         elif chosenRole == "bodyguard":
                             tempStatStr = self.statusList + "\n!Wprotect```"
+                        tempStatStr = tempStatStr + "------------------------------------"
                         self.statusRef = await user.send(tempStatStr)
 
                         #now to remove chosenRole from openRole db
@@ -434,9 +386,14 @@ Game Start Syntax: ``!beginGame``")
                         initiatorName = cursor.fetchone()
                         for player in playerList:
                             user = self.bot.get_user(int(player[0]))
-                            await user.send("{} has started a lynch vote against {} but needs \
+                            msg = self.statusRef
+                            msg = msg + "{} has started a lynch vote against {} but needs \
                                 someone to second this notion! (User ``!Wlynch Second`` to second \
-                                the notion)".format(initiatorName[1], arg1))
+                                the notion)".format(initiatorName[1], arg1)
+                            await message.edit(content = msg)
+                            #await user.send("{} has started a lynch vote against {} but needs \
+                            #    someone to second this notion! (User ``!Wlynch Second`` to second \
+                            #    the notion)".format(initiatorName[1], arg1))
                         self.lynchActive = True
 
                 #elif self.isDay and self.lynchActive and arg1 == "second": #someone seconds a lynch attempt
@@ -454,7 +411,24 @@ Game Start Syntax: ``!beginGame``")
                 print("MySQL connection is closed")
                 print("****************************************************")
 
+# Dev commands ############################################
+###########################################################                                                         
+###########################################################                                                          
+###########################################################                                                          
+###########################################################                                                          
+###########################################################                                                          
+###########################################################                                                          
+# Dev commands ############################################
 
+    @commands.command(name = 'WsaveUsers')
+    async def WsaveUsers(self, ctx):
+        await ctx.send("Attempting to save users in database locally")
+        self.werewolfHelper.WLsaveUsers()
+
+    @commands.command(name = 'WfillUsers')
+    async def WfillUsers(self, ctx):
+        await ctx.send("Attempting to fill database with saved users")
+        self.werewolfHelper.WLfillUsers()
 
 def setup(bot):
     bot.add_cog(werewolfMan(bot))
