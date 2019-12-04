@@ -28,8 +28,8 @@ class Help(commands.Cog):
         await ctx.send("*Can't delete more than 100 messages.*")
         await ctx.send("6. !nickname <nickname>")
         await ctx.send("*!nickname: for reset to default nickname.*")
-        await ctx.send("7. !add_role <@member> <role>")
-        await ctx.send("8. !del_role <@member> <role>")
+        await ctx.send("7. !add_role <role>")
+        await ctx.send("8. !del_role <role>")
 
         await ctx.send("**GAME**")
         await ctx.send("9. !Whelp: for Game Manual Page.")
@@ -37,6 +37,8 @@ class Help(commands.Cog):
         await ctx.send("**Only for Admin**")
         await ctx.send("10. !kick <@member> <reason>")
         await ctx.send("11. !ban <@member> <reason>")
+        await ctx.send("12. !add_role <@member> <role>")
+        await ctx.send("13. !del_role <@member> <role>")
    
 
 def setup(bot):
