@@ -18,7 +18,7 @@ class werewolfMan(commands.Cog):
         self.lynchAttempt = 0
         self.isDay = True
         self.statusList = None
-        self.statusRef = None #reference to statusList message in chat for editing
+        self.statusRef = [] #reference to statusList message in chat for editing
         self.werewolfHelper = werewolfLogic()
 
     @commands.command(name = 'Wstartup')
@@ -85,94 +85,18 @@ There will be {} werewolves".format(numWerewolves))
 
     @commands.command(name = 'WbeginGame')
     async def WbeginGame(self, ctx):
-        TOKEN = open(self.dbPassLoc, "r").read()
-        try:
-            connection = mysql.connector.connect(host = 'localhost',
-                                                database = 'testDB',
-                                                user = 'root',
-                                                password = TOKEN)
-
-            if connection.is_connected():
-                cursor = connection.cursor()
-                print("****************************************************")
-                cursor.execute("SELECT * FROM players")
-                playerList = cursor.fetchall()
-                if self.rolesAdded:
-                    self.statusList = "```Player statuses:\n" #starting status list
-                    for entry in playerList: #format (userID, name)
-                        self.statusList = self.statusList + "-{}: Alive\n".format(entry[1]) #adds each player to statusList in loop
-                        user = self.bot.get_user(int(entry[0]))
-                        await user.send("Use this chat to make actions for each round. \
-                            Standby for role assignment")
-                        sql = "INSERT INTO round (name, userID, status) VALUES (%s, %s, %s)"
-                        roundVal = (entry[1], entry[0], "1")
-                        cursor.execute(sql, roundVal)
-                        connection.commit()
-                    #all players now added to statusList, adding divider
-                    self.statusList = self.statusList + "------------------------------------\nActions:\n!Wlynch"#adding !Wlynch since it is an action every player has
-                    #actually assigning roles now
-                    cursor.execute("SELECT * FROM round")
-                    roundList = cursor.fetchall()
-                    for entry in roundList: #format (id, name, userID, roleName, status, specialAction)
-                        cursor.execute("SELECT * FROM roles WHERE roleStatus = '0'")
-                        openRolesList = cursor.fetchall()
-                        openRoles = []
-                        for role in openRolesList:
-                            openRoles.append((role[0], role[2]))
-                        chosenRole = random.choice(openRoles)
-                        sql = "UPDATE round SET roleName = %s, specialAction = %s WHERE userID = %s"
-                        inputVal = (chosenRole, entry[2]) #TODO
-                        cursor.execute(sql, inputVal)
-                        connection.commit()
-                        print("Player: " + entry[1] + ":" + entry[2] + "is role: " + chosenRole +"\n")
-                        user = self.bot.get_user(int(entry[2]))
-                        await user.send("``You are: {} and your role is: {}``".format(entry[1], chosenRole))
-
-                        #section for sending statusList
-                        if chosenRole == "werewolf":
-                            tempStatStr = self.statusList + "\n!Wkill```"
-                        elif chosenRole == "seer":
-                            tempStatStr = self.statusList + "\n!Wcheck```" 
-                        elif chosenRole == "bodyguard":
-                            tempStatStr = self.statusList + "\n!Wprotect```"
-                        tempStatStr = tempStatStr + "------------------------------------"
-                        self.statusRef = await user.send(tempStatStr)
-
-                        #now to remove chosenRole from openRole db
-                        sql = "UPDATE roles SET roleStatus = %s WHERE roleName = %s AND roleStatus = '0' limit 1"
-                        roleUpdate = ("1", chosenRole)
-                        cursor.execute(sql, roleUpdate)
-                        connection.commit()
-                    #await ctx.send("roles have been assigned")
-                    #notify werewolves of fellow werewolves
-                    #theres probably a more efficient way of doing this
-                    #but this was all I could think of
-                    cursor.execute("SELECT * FROM round WHERE roleName = 'werewolf'")
-                    lycanList = cursor.fetchall()
-                    werewolfList = []
-                    for werewolf in lycanList:
-                        werewolfList.append(werewolf[1])
-                    cursor.execute("SELECT * FROM players")
-                    playerList = cursor.fetchall()
-                    for player in playerList:
-                        for werewolf in werewolfList:
-                            if player[1] == werewolf:
-                                user = self.bot.get_user(int(player[0]))
-                                await user.send("Werewolf list: ")
-                                for werewolf in werewolfList:
-                                    await user.send(werewolf)
-
-
-                else:
-                    await ctx.send("roles not yet set. Please set roles first")
-        except Error as e:
-            print("Error while conecting to MySQL", e)
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
-                print("MySQL connection is closed")
-                print("****************************************************")
+        if self.rolesAdded:
+            self.werewolfHelper.WLcreateRound() #assigns roles to players
+            playerList = self.werewolfHelper.getPlayerList() #gets list of userIDs
+            for playerID in playerList:
+                UIstring = self.werewolfHelper.makeUI(playerID) #gets UI string to send to player
+                user = self.bot.get_user(int(playerID))
+                await user.send(UIstring)
+                #TODO : find a way to store msg references to edit
+                #self.statusRef.append(msg)
+        else:
+            await ctx.send("roles not yet set. Please set roles first")
+  
 
 # Action commands #########################################
 ###########################################################                                                         
