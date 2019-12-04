@@ -11,5 +11,14 @@ class kick(commands.Cog):
     async def kick(self,ctx, member:discord.Member, *, reason=None ):
         await member.kick(reason=reason)
 
+    @kick.error
+    async def kickHandler(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("Err: missing input \n \
+**Command**: Kick \n \
+**Description**: Moderation tool to kick users from the server \n \
+**Alias(es)**: ``kick`` \n \
+**Usage**: ``!kick <userID>`` \n ")                      
+
 def setup(bot):
     bot.add_cog(kick(bot))
