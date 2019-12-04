@@ -62,11 +62,85 @@ class werewolfLogic:
                 print("MySQL connection for reset is closed\n")
                 print("****************************************************\n")
 
-    #def WLroleSetting(playerCount, roleSet):
-     #   if roleSet == "justVillagers":
-      #      print("Using justVillagers as role set")
+    def WLroleSetting(self, playerCount, werewolfCount, roleSet):#roleSet is an int
+        TOKEN = open(self.dbPassLoc, "r").read()
+        wwinVal = ('werewolf', '0', '!Wkill')
+        basicinVal = [
+            ('seer', '0', '!Wcheck'),
+            ('bodyguard', '0', '!Wprotect')
+        ] 
+        sql = "INSERT INTO roles( roleName, roleStatus, specialAction) VALUES (%s, %s, %s)"
+        #roles for allSpecials not currently implemented
+        #planned: seerInsane, hunter, fool, mason, pacifist, gunsmith
+        #ref: https://boardgamegeek.com/wiki/page/BGG_Werewolf_PBF_Role_List
 
-       # elif roleSet == "allSpecials"
+        try:
+            connection = mysql.connector.connect(
+                host = 'localhost',
+                database = self.dbName,
+                user = 'root',
+                password = TOKEN)
+
+            if connection.is_connected():
+                cursor = connection.cursor()
+                print("****************************************************")
+                print("Accessing database to insert roles")
+                
+                #first putting in werewolves
+                for _ in range(werewolfCount):
+                    cursor.execute(sql, wwinVal)
+                    connection.commit()
+                    print(cursor.rowcount, " werewolf added")
+
+                #adding in seer/bodyguard if basicSpecials enabled
+                villagerCount = playerCount - werewolfCount
+                if roleSet == 2:
+                    villagerCount -= 2
+                    cursor.executemany(sql, basicinVal)
+                    connection.commit()
+                    print(cursor.rowcount, " special roles were added")
+                
+                #adding in villagers for remaining player count
+                for _ in range(villagerCount):
+                    cursor.execute(sql, ('villager', '0', None))
+                    connection.commit()
+                    print(cursor.rowcount, " villager added")
+
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+        finally:
+            cursor.close()
+            connection.close()
+            print("****************************************************")
+            
+
+
+    #helper methods
+    #returns current number of players registered for game
+    def getPlayerCount(self):
+        TOKEN = open(self.dbPassLoc, "r").read()
+        try:
+            connection = mysql.connector.connect(
+                host = 'localhost',
+                database = self.dbName,
+                user = 'root',
+                password = TOKEN)
+
+            if connection.is_connected():
+                cursor = connection.cursor()
+                print("****************************************************")
+                print("Accessing database to obtain current player count\n")
+                cursor.execute("SELECT COUNT(*) FROM players")
+                playerCount = cursor.fetchone()
+                print("there are {} players\n".format(playerCount[0]))
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+                print("****************************************************")
+                return playerCount
 
     #for populating database with saved test users
     def WLfillUsers(self):
