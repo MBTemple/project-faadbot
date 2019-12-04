@@ -249,7 +249,6 @@ class werewolfLogic:
                 cursor.execute("SELECT * FROM round")#format (id, name, userID, roleName, status)
                 roundList = cursor.fetchall()
                 for entry in roundList:
-                    print("poopidy scoop")
                     #print("processing entry: " + entry)
                     EntryisPlayer = False
                     #check if werewolf (determines if I should display other werewolves)
@@ -350,10 +349,9 @@ class werewolfLogic:
                 cursor = connection.cursor()
                 print("****************************************************")
                 print("Accessing database to obtain special action information")
-                sql = "SELECT * FROM roles WHERE roleName = %s"
-                cursor.execute(sql, roleName)
+                cursor.execute("SELECT * FROM roles WHERE roleName = %s", (roleName, ))
                 specialAction = cursor.fetchone()
-                print("Found special action for {} is {}".format(roleName, specialAction[2]))
+                print("Found special action for " + roleName + " is " + specialAction[2])
 
         except Error as e:
             print("Error while connecting to MySQL", e)
