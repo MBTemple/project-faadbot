@@ -72,55 +72,16 @@ There will be {} werewolves".format(numWerewolves))
 
     @commands.command(name = 'Wjoin')
     async def Wjoin(self, ctx, arg1):
-        TOKEN = open(self.dbPassLoc, "r").read()
-        try: 
-            connection = mysql.connector.connect(host = 'localhost', 
-                                                database = 'testDB',
-                                                user = 'root',
-                                                password = TOKEN)
-            if connection.is_connected():
-                nameUnique = True
-                userUnique = True
-                inputNameComp = "%s" % arg1
-                userIDComp = "%s" % ctx.message.author.id
-
-                cursor = connection.cursor()
-                print("****************************************************")
-                #first check for duplicates
-                #if duplicate userID, update name
-                #if duplicate name, deny insert and notify user
-                cursor.execute("SELECT * FROM players")
-                playerList = cursor.fetchall()
-                for entry in playerList:
-                    if entry[1] == inputNameComp:
-                        await ctx.send("Duplicate name detected. Select new name")
-                        nameUnique = False
-                    elif entry[0] == userIDComp:
-                        await ctx.send("Updating player name")
-                        userUnique = False
-                        sql = "UPDATE players SET name = %s WHERE userID = %s"
-                        inVal = (arg1, entry[0])
-                        cursor.execute(sql, inVal)
-                        connection.commit()
-                        print(cursor.rowcount, "record(s) affected")
-
-                #actual insert if duplicate check passes
-                if nameUnique and userUnique:
-                    sql = "INSERT INTO players (userID, name) VALUES (%s, %s)"
-                    print("Connected to database to add " + str(ctx.message.author.id) +":" + arg1)
-                    inVal = (ctx.message.author.id, arg1)
-                    cursor.execute(sql, inVal)
-                    connection.commit()
-                    print(cursor.rowcount, "record inserted.")
-                    await ctx.send(arg1 + ' has joined the game')
-        except Error as e:
-            print("Error while connecting to MySQL", e)
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
-                print("MySQL connection is closed")
-                print("****************************************************")
+        userID = "%s" % int(ctx.message.author.id)
+        statusCode = self.werewolfHelper.WLjoin(userID, arg1)
+        if statusCode == 0: #except error code
+            await ctx.send("An error has occurred")
+        elif statusCode == 1: #pass code
+            await ctx.send("{} has joined the game".format(arg1))
+        elif statusCode == 2: # duplicate name code
+            await ctx.send("Duplicate name detected. Player names must be unique, please choose another name")
+        elif statusCode == 3: #duplicate id code
+            await ctx.send("Player name updated to {}".format(arg1))
 
     @commands.command(name = 'WbeginGame')
     async def WbeginGame(self, ctx):

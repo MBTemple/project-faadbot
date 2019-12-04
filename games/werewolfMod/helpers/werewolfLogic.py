@@ -62,6 +62,64 @@ class werewolfLogic:
                 print("MySQL connection for reset is closed\n")
                 print("****************************************************\n")
 
+    def WLjoin(self, userID, inputName):
+        TOKEN = open(self.dbPassLoc, "r").read()
+        try:
+            connection = mysql.connector.connect(
+                host = 'localhost',
+                database = self.dbName,
+                user = 'root',
+                password = TOKEN)
+            
+            if connection.is_connected():
+                print("****************************************************")
+                print("Accessing database to add player\n")
+                cursor = connection.cursor()
+                returnCode = 4
+                unique = True
+                print("userID is " + userID)
+                cursor.execute("SELECT * FROM players")
+                playerList = cursor.fetchall()
+                for entry in playerList:
+                    
+                    print(entry[0] )#" " + userID)
+                    #first check duplicate username
+                    if entry[1] == inputName:
+                        print("duplicate username {}. Aborting.\n".format(entry[1]))
+                        print("****************************************************")
+                        unique = False
+                        returnCode = 2 #duplicate username code
+                    elif entry[0] == userID:
+                        print("duplicate id {}. Updating player name.\n".format(entry[0]))
+                        sql = "UPDATE players SET name = %s WHERE userID = %s"
+                        inVal = (inputName, entry[0])
+                        cursor.execute(sql, inVal)
+                        connection.commit()
+                        print(cursor.rowcount, "record(s) affected")
+                        unique = False
+                        print("****************************************************")
+                        returnCode = 3 #duplicate id code 
+                
+                if unique == True:
+                    sql = "INSERT INTO players (userID, name) VALUES (%s, %s)"
+                    print("Connected to database to add " + userID +":" + inputName)
+                    inVal = (userID, inputName)
+                    cursor.execute(sql, inVal)
+                    connection.commit()
+                    print(cursor.rowcount, "record inserted.")
+                    returnCode = 1 #pass code
+
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+            returnCode = 0 #error code
+        finally:
+            if connection.is_connected:
+                cursor.close()
+                connection.close()
+                print("returnCode is {}\n".format(returnCode))
+                print("****************************************************")
+                return returnCode #pass code, new user joined
+    
     def WLroleSetting(self, playerCount, werewolfCount, roleSet):#roleSet is an int
         TOKEN = open(self.dbPassLoc, "r").read()
         wwinVal = ('werewolf', '0', '!Wkill')
@@ -109,9 +167,10 @@ class werewolfLogic:
         except Error as e:
             print("Error while connecting to MySQL", e)
         finally:
-            cursor.close()
-            connection.close()
-            print("****************************************************")
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+                print("****************************************************")
             
 
 
