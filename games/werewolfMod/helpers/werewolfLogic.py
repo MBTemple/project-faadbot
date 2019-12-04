@@ -1,6 +1,7 @@
 import mysql.connector
 from mysql.connector import Error
 import math
+import random
 import re # used for multi-delimiter tokenizing
 
 class werewolfLogic:
@@ -46,7 +47,7 @@ class werewolfLogic:
                 #status is a binary int indicating if the player is alive or not (1 for alive)
                 makeRound = "CREATE TABLE round (id INT AUTO_INCREMENT PRIMARY KEY, \
                     name VARCHAR(255), userID VARCHAR(50), roleName VARCHAR(255), \
-                    status INT(1), specialAction VARCHAR(50))"
+                    status INT(1))"
 
                 #execute above sql calls to create tables
                 cursor.execute(makePlayers)
@@ -170,11 +171,197 @@ class werewolfLogic:
             if connection.is_connected():
                 cursor.close()
                 connection.close()
-                print("****************************************************")
+                print("****************************************************\n")
             
+    def WLcreateRound(self):
+        TOKEN = open(self.dbPassLoc, "r").read()
+        try:
+            connection = mysql.connector.connect(
+                host = 'localhost',
+                database = self.dbName,
+                user = 'root',
+                password = TOKEN)
+            
+            if connection.is_connected():
+                cursor = connection.cursor()
+                print("****************************************************\n")
+                cursor.execute("SELECT * FROM players")
+                playerList = cursor.fetchall()
+                for entry in playerList: #format (userID, name)
+                    sql = "INSERT INTO round (name, userID, status) VALUES (%s, %s, %s)"
+                    roundVal = (entry[1], entry[0], "1")
+                    cursor.execute(sql, roundVal)
+                    connection.commit()
+                #all players now added to statusList
+                #actually assigning roles now
+                cursor.execute("SELECT * FROM round")
+                roundList = cursor.fetchall()
+                for entry in roundList:#format (id, name, userID, roleName, status, specialAction)
+                    cursor.execute("SELECT * FROM roles WHERE roleStatus = '0'")
+                    openRolesList = cursor.fetchall()
+                    openRoles = []
+                    for role in openRolesList:
+                        openRoles.append(role[0])
+                    chosenRole = random.choice(openRoles)
 
+
+                    sql = "UPDATE round SET roleName = %s WHERE userID = %s"
+                    inputVal = (chosenRole, entry[2])
+                    cursor.execute(sql, inputVal)
+                    connection.commit()
+                    print("Player: {}:{} is role: {}".format(entry[1], entry[2], chosenRole))
+
+                    #removing the chosenRole from openRole db
+                    sql = "UPDATE roles SET roleStatus = %s WHERE roleName = %s AND roleStatus = '0' limit 1"
+                    roleUpdate = ("1", chosenRole)
+                    cursor.execute(sql, roleUpdate)
+                    connection.commit()
+
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+        finally:
+            cursor.close()
+            connection.close
+            print("****************************************************")
+                
 
     #helper methods
+    #returns a large string to display to players with current game information
+    def makeUI(self, playerID):
+        TOKEN = open(self.dbPassLoc, "r").read()
+        UIstring = "```Use this chat to make your actions\n-------------------------------------------------\nPlayer Statuses:\n"
+        try:
+            connection = mysql.connector.connect(
+                host = 'localhost',
+                database = self.dbName,
+                user = 'root',
+                password = TOKEN)
+            
+            if connection.is_connected():
+                cursor = connection.cursor()
+                print("****************************************************")
+                print("Accessing database to create UI string for: " + playerID)
+                werewolfList = self.listWerewolves()
+                #print("Werewolves obtained. Creating string")
+                PlayerisWerewolf = False
+                PlayerisVillager = False
+
+                cursor.execute("SELECT * FROM round")#format (id, name, userID, roleName, status)
+                roundList = cursor.fetchall()
+                for entry in roundList:
+                    #print("processing entry: " + entry)
+                    EntryisPlayer = False
+                    #check if werewolf (determines if I should display other werewolves)
+                    EntryisWerewolf = False #reset for each entry
+                    for werewolf in werewolfList:
+                        if not PlayerisWerewolf and werewolf == playerID:
+                            PlayerisWerewolf = True
+                        if entry[2] == werewolf:
+                            EntryisWerewolf = True
+
+                    #check player status
+                    if entry[4] == '0':
+                        playerStatus = "Dead "
+                    else:
+                        playerStatus = "Alive "
+
+                    #check if player (determines if I show role)
+                    if entry[2] == playerID:
+                        EntryisPlayer = True
+                        if entry[3] == 'villager':
+                            PlayerisVillager = True
+                        else:
+                            playerRole = entry[3]
+
+                    #start putting entries into UI string
+                    if EntryisPlayer:
+                        UIstring = UIstring + entry[1] + ": " + playerStatus + entry[3] +"\n"
+                        #UIstring = UIstring + "-{}: {} {}\n".format(entry[1], playerStatus, entry[3])
+                        print(entry[1] + ": " + playerStatus + entry[3] +"\n")
+                    elif PlayerisWerewolf and EntryisWerewolf:
+                        UIstring = UIstring + entry[1] + ": " + playerStatus + entry[3] +"\n"
+                        #UIstring = UIstring + "-{}: {} {}\n".format(entry[1], playerStatus, entry[3])
+                        print(entry[1] + ": " + playerStatus + entry[3] +"\n")
+                    else:
+                        UIstring = UIstring + entry[1] + ": " + playerStatus+"\n"
+                        #UIstring = UIstring + "-{}: {}\n".format(entry[1], playerStatus)
+                        print(entry[1] + ": " + playerStatus +"\n")
+
+                #players should now be done in UIstring so adding seperator
+                UIstring = UIstring + "-------------------------------------------------\nYour Actions:\n"
+                #adding !Wlynch since everyone has that action
+                #adding !Wskip since everyone has that action
+                UIstring = UIstring + "!Wlynch\n!Wskip\n"
+
+                if not PlayerisVillager:
+                    specialAct = self.getSpecialAction(playerRole)
+                    UIstring = UIstring + specialAct + "```"
+                else:
+                    UIstring = UIstring + "```"
+
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+        finally: 
+            cursor.close()
+            connection.close()
+            print("****************************************************")
+            return UIstring
+
+    #returns a list of current werewolf names
+    def listWerewolves(self):
+        TOKEN = open(self.dbPassLoc, "r").read()
+        try:
+            connection = mysql.connector.connect(
+                host = 'localhost',
+                database = self.dbName,
+                user = 'root',
+                password = TOKEN)
+            
+            if connection.is_connected():
+                cursor = connection.cursor()
+                print("****************************************************")
+                print("Accessing database to obtain list of werewolves")
+                cursor.execute("SELECT * FROM round WHERE roleName = 'werewolf'")
+                playerList = cursor.fetchall()
+                nameList = []
+                for player in playerList:
+                    nameList.append(player[0])
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+        finally:
+            cursor.close()
+            connection.close()
+            print("****************************************************")
+            return nameList
+
+
+    #returns special action for input role
+    def getSpecialAction(self, roleName):
+        TOKEN = open(self.dbPassLoc, "r").read()
+        try:
+            connection = mysql.connector.connect(
+                host = 'localhost',
+                database = self.dbName,
+                user = 'root',
+                password = TOKEN)
+            
+            if connection.is_connected():
+                cursor = connection.cursor()
+                print("****************************************************")
+                print("Accessing database to obtain special action information")
+                cursor.execute("SELECT * FROM roles WHERE roleName = %s", (roleName, ))
+                specialAction = cursor.fetchone()
+                print("Found special action for " + roleName + " is " + specialAction[2])
+
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+                print("****************************************************")
+                return specialAction[2]
+
     #returns current number of players registered for game
     def getPlayerCount(self):
         TOKEN = open(self.dbPassLoc, "r").read()
@@ -200,6 +387,36 @@ class werewolfLogic:
                 connection.close()
                 print("****************************************************")
                 return playerCount
+
+    #returns current list of players registered for game
+    def getPlayerList(self):
+        TOKEN = open(self.dbPassLoc, "r").read()
+        try:
+            connection = mysql.connector.connect(
+                host = 'localhost',
+                database = self.dbName,
+                user = 'root',
+                password = TOKEN)
+
+            if connection.is_connected():
+                cursor = connection.cursor()
+                print("****************************************************")
+                print("Accessing database to obtain current playerlist\n")
+                playerList = []
+                cursor.execute("SELECT * FROM players")
+                players = cursor.fetchall()
+                for entry in players:
+                    playerList.append(entry[0])
+                for entry in playerList:
+                    print(entry)
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+                print("****************************************************")
+                return playerList
 
     #for populating database with saved test users
     def WLfillUsers(self):
