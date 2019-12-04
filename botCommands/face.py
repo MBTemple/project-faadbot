@@ -92,8 +92,8 @@ class Face(commands.Cog):
 
                 # pass the mean values to the image to pre-process the image
                 # so it can be passed to the model for prediction
-                blobAgeGender = cv2.dnn.blobFromImage(face_img, 1, (227, 227), swapRB=False)
-                blobIdentity = cv2.dnn.blobFromImage(face_img, 1, (227, 227), swapRB=False)
+                blobAgeGender = cv2.dnn.blobFromImage(face_img, 1, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
+                blobIdentity = cv2.dnn.blobFromImage(face_img, 1, (227, 227), MODEL_MEAN_VALUES_2, swapRB=False)
 
                 # Predict age
                 age_net.setInput(blobAgeGender)
