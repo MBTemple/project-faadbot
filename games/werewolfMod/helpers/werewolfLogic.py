@@ -227,9 +227,9 @@ class werewolfLogic:
 
     #helper methods
     #returns a large string to display to players with current game information
-    def makeUI(self, playerID):
+    def makeUI(self, playerID, isDay):
         TOKEN = open(self.dbPassLoc, "r").read()
-        UIstring = "```Use this chat to make your actions\n-------------------------------------------------\nPlayer Statuses:\n"
+        UIstring = "```Use this chat to make your actions\n-------------------------------------------\nPlayer Statuses:\n"
         try:
             connection = mysql.connector.connect(
                 host = 'localhost',
@@ -288,16 +288,20 @@ class werewolfLogic:
                         print(entry[1] + ": " + playerStatus +"\n")
 
                 #players should now be done in UIstring so adding seperator
-                UIstring = UIstring + "-------------------------------------------------\nYour Actions:\n"
+                UIstring = UIstring + "-------------------------------------------\nYour Actions:\n"
                 #adding !Wlynch since everyone has that action
                 #adding !Wskip since everyone has that action
                 UIstring = UIstring + "!Wlynch\n!Wskip\n"
 
                 if not PlayerisVillager:
                     specialAct = self.getSpecialAction(playerRole)
-                    UIstring = UIstring + specialAct + "```"
+                    UIstring = UIstring + specialAct
+
+                #adding in time of day
+                if isDay:
+                    UIstring = UIstring + "\n-------------------------------------------\nIt is Daytime```"
                 else:
-                    UIstring = UIstring + "```"
+                    UIstring = UIstring + "\n-------------------------------------------\nIt is Nighttime```"
 
         except Error as e:
             print("Error while connecting to MySQL", e)
@@ -388,7 +392,7 @@ class werewolfLogic:
                 print("****************************************************")
                 return playerCount
 
-    #returns current list of players registered for game
+    #returns current list of playerid registered for game
     def getPlayerList(self):
         TOKEN = open(self.dbPassLoc, "r").read()
         try:
@@ -406,7 +410,7 @@ class werewolfLogic:
                 cursor.execute("SELECT * FROM players")
                 players = cursor.fetchall()
                 for entry in players:
-                    playerList.append(entry[0])
+                    playerList.append((entry[0], entry[1]))
                 for entry in playerList:
                     print(entry)
         except Error as e:

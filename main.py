@@ -67,7 +67,10 @@ CLfile.close()
 if __name__ == '__main__':
     for extension in commandList:
         #print(extension + "\n")
-        bot.load_extension(extension)
+        try:
+            bot.load_extension(extension)
+        except:
+            print("Error on import: " + extension)
 
 @bot.event #bootup event
 async def on_ready():
