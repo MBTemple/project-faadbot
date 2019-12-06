@@ -20,6 +20,9 @@ class werewolfMan(commands.Cog):
         self.statusRef = [] #reference to statusList message in chat for editing
         self.actionRef = [] #reference to action messages list in chat for editing
         self.werewolfHelper = werewolfLogic()
+        self.votesNeeded = 0 #number of votes needed for a vote to pass
+        self.votesAcquired = 0 #current number of votes held
+        self.votesAgainst = 0 #tallies votes against
 
     @commands.command(name = 'Wstartup')
     async def Wstartup(self, ctx):
@@ -123,6 +126,7 @@ There will be {} werewolves".format(numWerewolves))
     @commands.command(name = 'Wlynch')
     async def Wlynch(self, ctx, arg1):
         playerList = self.werewolfHelper.getPlayerList()
+        msgActList = []
         if self.isDay and not self.lynchActive:
             arg1Exists = False
             initiator = None
@@ -141,21 +145,32 @@ someone to second this notion! (Use !Wlynch Second to second the notion or !Wlyn
 
                 for player in playerList:
                     user = self.bot.get_user(int(player[0]))
-                    await user.send(Notification)
+                    msg = await user.send(Notification)
+                    msgActList.append(msg)
+                self.replaceOldMessage(msgActList)
 
         elif self.isDay and self.lynchActive:
             if arg1 == "Second":
-                print("TODO")
+                Notification = "```Notion to lynch passed. Select a reaction to vote```"
+                for player in playerList:
+                    user = self.bot.get_user(int(player[0]))
+                    msg = await user.send(Notification)
+                    msgActList.append(msg)
+                self.replaceOldMessage(msgActList)
+                self.addVoteReactions()
+
             elif arg1 == "Reject":
                 if self.lynchAttempt == 0:
                     self.isDay = False
                     self.lynchAttempt = 2
-                    Notification = "Notion to lynch rejected. The Day has ended"
+                    Notification = "```Notion to lynch rejected. The Day has ended```"
                 else:
-                    Notification = "Notion to lynch rejected. There is 1 attempt left today"
+                    Notification = "```Notion to lynch rejected. There is 1 attempt left today```"
                 for player in playerList:
                     user = self.bot.get_user(int(player[0]))
-                    await user.send(Notification)
+                    msg = await user.send(Notification)
+                    msgActList.append(msg)
+                self.replaceOldMessage(msgActList)
             else:
                 await ctx.send("Invalid input. Please use only ``!Wlynch Second`` or ``!Wlynch Reject`` for responding to lynch requests")
 
@@ -184,6 +199,36 @@ someone to second this notion! (Use !Wlynch Second to second the notion or !Wlyn
     async def WfillUsers(self, ctx):
         await ctx.send("Attempting to fill database with saved users")
         self.werewolfHelper.WLfillUsers()
+
+# Helper commands #########################################
+###########################################################                                                         
+###########################################################                                                          
+###########################################################                                                          
+###########################################################                                                          
+###########################################################                                                          
+###########################################################                                                          
+# Helper commands #########################################
+
+    def replaceOldMessage(self, newMsg):#deletes old messages in self.actionRef and replaces them with the new action msgs
+        print("Initiating replaceOldMessage()")
+        for msg in self.actionRef:
+            msg.delete()
+        print("Old messages removed")
+        self.actionRef = newMsg.copy()
+        print("New messages added")
+        for msg in self.actionRef:
+            print(msg)
+        print("replaceOldMessage() complete!")
+
+    async def addVoteReactions(self): #adds checkbox and x reactions for voting on action messages
+        print("Initiating addVoteReactions()")
+        reactions = ["white_check_mark", "regional_indicator_x"]
+        for msg in self.actionRef:
+            for item in reactions:
+                await msg.add_reaction(item)
+        print("addVoteReactions() complete!")
+
+
 
 def setup(bot):
     bot.add_cog(werewolfMan(bot))

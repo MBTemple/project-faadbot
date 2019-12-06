@@ -1,7 +1,7 @@
 import discord
 import os #gives access to listdir()
 import importlib
-import sys
+import sys, traceback
 from discord.ext import commands
 
 discordCommandDir = 'discordCommands' #storage for discord affecting modules
@@ -69,8 +69,10 @@ if __name__ == '__main__':
         #print(extension + "\n")
         try:
             bot.load_extension(extension)
-        except:
+        except Exception as e:
             print("Error on import: " + extension)
+            print(e)
+            traceback.print_exc()
 
 @bot.event #bootup event
 async def on_ready():
