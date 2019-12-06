@@ -12,13 +12,13 @@ class werewolfMan(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
         self.rolesAdded = False
-        self.dbPassLoc = "games/werewolfMod/localhostDBPW.txt"
         self.lynchActive = False
         self.lynchSeconded = False
-        self.lynchAttempt = 0
+        self.lynchAttempt = 2 #counts down remaining attempts
         self.isDay = True
         self.statusList = None
         self.statusRef = [] #reference to statusList message in chat for editing
+        self.actionRef = [] #reference to action messages list in chat for editing
         self.werewolfHelper = werewolfLogic()
 
     @commands.command(name = 'Wstartup')
@@ -86,14 +86,27 @@ There will be {} werewolves".format(numWerewolves))
     @commands.command(name = 'WbeginGame')
     async def WbeginGame(self, ctx):
         if self.rolesAdded:
+            msgList = []
+            msgActList = []
             self.werewolfHelper.WLcreateRound() #assigns roles to players
             playerList = self.werewolfHelper.getPlayerList() #gets list of userIDs
             for playerID in playerList:
-                UIstring = self.werewolfHelper.makeUI(playerID) #gets UI string to send to player
-                user = self.bot.get_user(int(playerID))
-                await user.send(UIstring)
-                #TODO : find a way to store msg references to edit
-                #self.statusRef.append(msg)
+                UIstring = self.werewolfHelper.makeUI(playerID[0], self.isDay) #gets UI string to send to player
+                user = self.bot.get_user(int(playerID[0]))
+                msg = await user.send(UIstring)
+                msgList.append(msg)
+
+                msgAct = await user.send("```Information on events will be shown in this window```")
+                msgActList.append(msgAct)
+            #self.statusRef.reverse()#puts inputs back in original order
+            self.statusRef = msgList.copy()
+            self.actionRef = msgActList.copy()
+            print("verifying statusRef list")
+            for msg in self.statusRef:
+                print(msg)
+            print("verifying actionRef list")
+            for msg in self.actionRef:
+                print(msg)
         else:
             await ctx.send("roles not yet set. Please set roles first")
   
@@ -109,56 +122,49 @@ There will be {} werewolves".format(numWerewolves))
 
     @commands.command(name = 'Wlynch')
     async def Wlynch(self, ctx, arg1):
-        TOKEN = open(self.dbPassLoc, "r").read()
-        try:
-            connection = mysql.connector.connect(host = 'localhost', 
-                                                database = 'testDB',
-                                                user = 'root',
-                                                password = TOKEN)
-            if connection.is_connected():
-                cursor = connection.cursor()
-                print("****************************************************")
+        playerList = self.werewolfHelper.getPlayerList()
+        if self.isDay and not self.lynchActive:
+            arg1Exists = False
+            initiator = None
+
+            for player in playerList:
+                if ctx.message.author.id == player[0]:
+                    initiator = player[1]
+                if arg1 == player[1]:
+                    arg1Exists = True
+
+            if arg1Exists:
+                self.lynchActive = True
+                self.lynchAttempt -= 1
+                Notification = "```{} has start a lynch vote against {} but needs \
+someone to second this notion! (Use !Wlynch Second to second the notion or !Wlynch Reject to reject)```".format(initiator, arg1)
+
+                for player in playerList:
+                    user = self.bot.get_user(int(player[0]))
+                    await user.send(Notification)
+
+        elif self.isDay and self.lynchActive:
+            if arg1 == "Second":
+                print("TODO")
+            elif arg1 == "Reject":
+                if self.lynchAttempt == 0:
+                    self.isDay = False
+                    self.lynchAttempt = 2
+                    Notification = "Notion to lynch rejected. The Day has ended"
+                else:
+                    Notification = "Notion to lynch rejected. There is 1 attempt left today"
+                for player in playerList:
+                    user = self.bot.get_user(int(player[0]))
+                    await user.send(Notification)
+            else:
+                await ctx.send("Invalid input. Please use only ``!Wlynch Second`` or ``!Wlynch Reject`` for responding to lynch requests")
+
                 #there are two votes that can occur for lynching
                 #each lynching notion that is initiated must have a second person backing it
                 #If a lynching notion passes, it immediately goes to night
-                if self.isDay and not self.lynchActive:
-                    arg1Exists = False
-                    cursor.execute("SELECT * FROM players")
-                    playerList = cursor.fetchall()
-                    
-                    for player in playerList:
-                        if player[1] == arg1:
-                            arg1Exists = True
-                    if arg1Exists:
-                        initiator = ctx.message.author.id
-                        cursor.execute("SELECT * FROM players WHERE userID = {}".format(initiator))
-                        initiatorName = cursor.fetchone()
-                        for player in playerList:
-                            user = self.bot.get_user(int(player[0]))
-                            msg = self.statusRef
-                            msg = msg + "{} has started a lynch vote against {} but needs \
-                                someone to second this notion! (User ``!Wlynch Second`` to second \
-                                the notion)".format(initiatorName[1], arg1)
-                            await message.edit(content = msg)
-                            #await user.send("{} has started a lynch vote against {} but needs \
-                            #    someone to second this notion! (User ``!Wlynch Second`` to second \
-                            #    the notion)".format(initiatorName[1], arg1))
-                        self.lynchActive = True
 
                 #elif self.isDay and self.lynchActive and arg1 == "second": #someone seconds a lynch attempt
 
-
-                else:
-                    await ctx.send("You can't use this until the daytime!")
-
-        except Error as e:
-            print("Error while connecting to MySQL", e)
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
-                print("MySQL connection is closed")
-                print("****************************************************")
 
 # Dev commands ############################################
 ###########################################################                                                         
