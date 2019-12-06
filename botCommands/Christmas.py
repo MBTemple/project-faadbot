@@ -11,8 +11,15 @@ class Christmas(commands.Cog):
 
     @commands.command(name='countdown')
     async def cc(self, ctx):
-        futuredate = datetime.strptime('Dec 25 2019  0:00', '%b %d %Y %H:%M')
         nowdate = datetime.now()
+        currentYear = int(datetime.now().year)
+        currentMonth = int(datetime.now().month)
+        currentDate = int(datetime.now().day)
+
+        if  currentMonth is 12 and currentDate is 26:
+            currentYear = + 1;
+
+        futuredate = datetime(currentYear, 12, 25, 00, 00)
         count = int((futuredate-nowdate).total_seconds())
         days = count//86400
         hours = (count-days*86400)//3600
