@@ -24,6 +24,7 @@ the base module for the final product.
 In some circumstances, python 2 may be installed as part of the operating system. If this is the case, 
 you will need to install pip 3 and use that to ensure that an old version of discord.py is not installed
 `$pip3 install discord.py==1.0.1`
+`$pip3 install --upgrade discord.py`
 
 ## Project Abstract
 

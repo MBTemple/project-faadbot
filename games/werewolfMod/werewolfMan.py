@@ -23,6 +23,8 @@ class werewolfMan(commands.Cog):
         self.votesNeeded = 0 #number of votes needed for a vote to pass
         self.votesAcquired = 0 #current number of votes held
         self.votesAgainst = 0 #tallies votes against
+        self.initiatorID = 0 #used to make sure initiator does try seconding his/her own things
+        self.victimID = 0 #person vote is initiated against
 
     @commands.command(name = 'Wstartup')
     async def Wstartup(self, ctx):
@@ -110,6 +112,10 @@ There will be {} werewolves".format(numWerewolves))
             print("verifying actionRef list")
             for msg in self.actionRef:
                 print(msg)
+
+                playerCount = self.werewolfHelper.getPlayerCount()
+                self.votesNeeded = math.ceil(int(playerCount[0])/2)
+                print("Majority needed for lynch votes is {}".format(self.votesNeeded))
         else:
             await ctx.send("roles not yet set. Please set roles first")
   
@@ -132,10 +138,12 @@ There will be {} werewolves".format(numWerewolves))
             initiator = None
 
             for player in playerList:
-                if ctx.message.author.id == player[0]:
+                if ctx.message.author.id == int(player[0]):
                     initiator = player[1]
+                    self.initiatorID = int(player[0])
                 if arg1 == player[1]:
                     arg1Exists = True
+                    self.victimID = int(player[0])
 
             if arg1Exists:
                 self.lynchActive = True
@@ -150,16 +158,19 @@ someone to second this notion! (Use !Wlynch Second to second the notion or !Wlyn
                 self.replaceOldMessage(msgActList)
 
         elif self.isDay and self.lynchActive:
-            if arg1 == "Second":
-                Notification = "```Notion to lynch passed. Select a reaction to vote```"
+            if arg1 == "Second" and not ctx.message.author.id == self.initiatorID:
+                Notification = "```Notion to lynch passed. Select a reaction to vote\nVotes for: {}\nVotes against: {}```".format(self.votesAcquired, self.votesAgainst)
+                self.initiatorID = 0
                 for player in playerList:
                     user = self.bot.get_user(int(player[0]))
                     msg = await user.send(Notification)
                     msgActList.append(msg)
                 self.replaceOldMessage(msgActList)
-                self.addVoteReactions()
+                await self.addVoteReactions()
 
-            elif arg1 == "Reject":
+            elif arg1 == "Reject" and not ctx.message.author.id == self.initiatorID:
+                self.initiatorID = 0
+                self.victimID = 0
                 if self.lynchAttempt == 0:
                     self.isDay = False
                     self.lynchAttempt = 2
@@ -173,13 +184,6 @@ someone to second this notion! (Use !Wlynch Second to second the notion or !Wlyn
                 self.replaceOldMessage(msgActList)
             else:
                 await ctx.send("Invalid input. Please use only ``!Wlynch Second`` or ``!Wlynch Reject`` for responding to lynch requests")
-
-                #there are two votes that can occur for lynching
-                #each lynching notion that is initiated must have a second person backing it
-                #If a lynching notion passes, it immediately goes to night
-
-                #elif self.isDay and self.lynchActive and arg1 == "second": #someone seconds a lynch attempt
-
 
 # Dev commands ############################################
 ###########################################################                                                         
@@ -222,11 +226,60 @@ someone to second this notion! (Use !Wlynch Second to second the notion or !Wlyn
 
     async def addVoteReactions(self): #adds checkbox and x reactions for voting on action messages
         print("Initiating addVoteReactions()")
-        reactions = ["white_check_mark", "regional_indicator_x"]
+        reactions = ['✅', '❌']
         for msg in self.actionRef:
             for item in reactions:
                 await msg.add_reaction(item)
         print("addVoteReactions() complete!")
+
+    async def updateLynchMessage(self, vote):
+        print("Initiating updateLynchMessage")
+        votePassed = False
+        if vote == "yes":
+            self.votesAcquired += 1
+            if self.votesAcquired >= self.votesNeeded:
+                print("Lynch vote has passed")
+                votePassed = True
+                self.votesAgainst = 0
+                self.votesAcquired = 0
+                self.isDay = False
+            elif self.votesAgainst >= self.votesNeeded: #vote failed
+                print("Lynch vote has failed")
+                self.votesAgainst = 0
+                self.votesAcquired = 0
+                if self.lynchAttempt == 0:
+                    self.isDay = False
+                    self.lynchAttempt = 2
+            self.lynchActive = False
+        else:
+            self.votesAgainst += 1
+        Notification = "```Notion to lynch passed. Select a reaction to vote\nVotes for: {}\nVotes against: {}".format(self.votesAcquired, self.votesAgainst)
+        if votePassed:
+            Notification = Notification + "\n The vote to lynch has passed. Lynching will commence..."
+            self.werewolfHelper.WLkill(self.victimID)
+            
+        Notification = Notification + "```"
+        for msg in self.actionRef:
+            await msg.edit(content = Notification)
+        if votePassed:
+            playerList = self.werewolfHelper.getPlayerList()
+            for player in playerList:
+                newUI = self.werewolfHelper.makeUI(player[0], self.isDay)
+                user = self.bot.get_user(int(player[0]))
+                await user.send(newUI)
+        print("updateLynchMessage() complete!")
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        if not user.bot:
+            print("Reaction detected")
+            if reaction.emoji == '✅':
+                print("Checkmark reaction detected")
+                await self.updateLynchMessage("yes")
+            elif reaction.emoji == '❌':
+                print("X mark reaction detected")
+                await self.updateLynchMessage("no")
+
 
 
 
