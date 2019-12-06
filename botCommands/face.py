@@ -90,7 +90,7 @@ class Face(commands.Cog):
                 img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 3)
                 face_img = img[y:y + h, x:x + w].copy()
 
-                # pass the mean values to the image to pre-process the image
+                # pass the mean values to the individually detected face images to pre-process the image
                 # so it can be passed to the model for prediction
                 blobAgeGender = cv2.dnn.blobFromImage(face_img, 1, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
                 blobIdentity = cv2.dnn.blobFromImage(face_img, 1, (227, 227), MODEL_MEAN_VALUES_2, swapRB=False)
