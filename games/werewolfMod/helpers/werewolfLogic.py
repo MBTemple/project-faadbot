@@ -260,7 +260,7 @@ class werewolfLogic:
                             EntryisWerewolf = True
 
                     #check player status
-                    if entry[4] == '0':
+                    if int(entry[4]) == 0:
                         playerStatus = "Dead "
                     else:
                         playerStatus = "Alive "
@@ -421,6 +421,32 @@ class werewolfLogic:
                 connection.close()
                 print("****************************************************")
                 return playerList
+
+    def WLkill(self, userID):
+        TOKEN = open(self.dbPassLoc, "r").read()
+        try:
+            connection = mysql.connector.connect(
+                host = 'localhost',
+                database = self.dbName,
+                user = 'root',
+                password = TOKEN)
+
+            if connection.is_connected():
+                cursor = connection.cursor()
+                print("****************************************************")
+                print("Accessing database to kill player\n")
+                sql = ("UPDATE round SET status = '0' WHERE userID = %s")
+                victim = (userID, )
+                cursor.execute(sql, victim)
+                connection.commit()
+
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+                print("****************************************************")
 
     #for populating database with saved test users
     def WLfillUsers(self):
