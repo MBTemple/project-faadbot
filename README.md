@@ -128,7 +128,7 @@ and teaching new skills through video tutorials to all the members.
 
 ## Group Members
 
-- Christopher Park
-- Sungji Kim
-- Maamar Bousseloub
-- Dawud Baig
+- Christopher
+- Sungji
+- Maamar
+- Dawud
